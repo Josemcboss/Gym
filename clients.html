@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clientes - GymPro</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Usa el mismo CSS -->
+    <script defer src="scripts.js"></script> <!-- Archivo JS compartido -->
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <h2>GymPro</h2>
+            <ul class="nav-menu">
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li class="active"><a href="clients.html">Clientes</a></li>
+                <li><a href="memberships.html">Membresías</a></li>
+                <li><a href="attendance.html">Asistencia</a></li>
+                <li><a href="payments.html">Pagos</a></li>
+                <li><a href="trainers.html">Entrenadores</a></li>
+                <li><a href="reports.html">Reportes</a></li>
+            </ul>
+        </aside>
+        <main class="main-content">
+            <h2>Gestión de Clientes</h2>
+            <button class="btn btn-primary" id="add-client-btn">+ Agregar Cliente</button>
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Teléfono</th>
+                            <th>Membresía</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="clients-table">
+                        <!-- Se llenará con JS -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

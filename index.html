@@ -1,0 +1,2054 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GymPro - Sistema de Gestión</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="scripts.js"></script>
+        
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2><span>GymPro</span></h2>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item active" data-page="dashboard">
+                    <span>Dashboard</span>
+                </li>
+                <li class="nav-item" data-page="clients">
+                    <span>Clientes</span>
+                </li>
+                <li class="nav-item" data-page="memberships">
+                    <span>Membresías</span>
+                </li>
+                <li class="nav-item" data-page="attendance">
+                    <span>Asistencia</span>
+                </li>
+                <li class="nav-item" data-page="payments">
+                    <span>Pagos</span>
+                </li>
+                <li class="nav-item" data-page="trainers">
+                    <span>Entrenadores</span>
+                </li>
+                <li class="nav-item" data-page="reports">
+                    <span>Reportes</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <h2 id="page-title">Dashboard</h2>
+                <div class="user-info">
+                    <div class="user-avatar">A</div>
+                    <div>
+                        <div>Administrador</div>
+                        <small>admin@gympro.com</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page">
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div>
+                                <div class="stat-card-title">Clientes Activos</div>
+                                <small class="stat-card-subtitle">Total de clientes con membresía activa</small>
+                            </div>
+                            <div class="icon" style="background-color: var(--primary);">👤</div>
+                        </div>
+                        <div class="stat-card-value" id="active-clients-count">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div>
+                                <div class="stat-card-title">Asistencias Hoy</div>
+                                <small class="stat-card-subtitle">Visitas registradas hoy</small>
+                            </div>
+                            <div class="icon" style="background-color: var(--success);">📝</div>
+                        </div>
+                        <div class="stat-card-value" id="today-attendance-count">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div>
+                                <div class="stat-card-title">Entrenadores</div>
+                                <small class="stat-card-subtitle">Total de entrenadores</small>
+                            </div>
+                            <div class="icon" style="background-color: var(--warning);">👨‍🏫</div>
+                        </div>
+                        <div class="stat-card-value" id="trainers-count">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <div>
+                                <div class="stat-card-title">Ingresos Mensuales</div>
+                                <small class="stat-card-subtitle">Total en el mes actual</small>
+                            </div>
+                            <div class="icon" style="background-color: var(--success);">💰</div>
+                        </div>
+                        <div class="stat-card-value" id="monthly-income">$0</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 class="mb-4">Membresías a Vencer Esta Semana</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Tipo de Membresía</th>
+                                <th>Fecha de Vencimiento</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expiring-memberships">
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3 class="mb-4">Últimas Asistencias</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Fecha y Hora</th>
+                                <th>Entrenador</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-attendance">
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Clients Page -->
+            <div id="clients-page" class="page" style="display: none;">
+                <div class="d-flex justify-between align-center mb-4">
+                    <h3>Gestión de Clientes</h3>
+                    <button class="btn btn-primary" id="add-client-btn">+ Agregar Cliente</button>
+                </div>
+
+                <div class="card">
+                    <div class="search-bar">
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="search-client" placeholder="Buscar cliente por nombre, correo o teléfono...">
+                        </div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Teléfono</th>
+                                <th>Membresía</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clients-table">
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Memberships Page -->
+            <div id="memberships-page" class="page" style="display: none;">
+                <div class="d-flex justify-between align-center mb-4">
+                    <h3>Gestión de Membresías</h3>
+                    <button class="btn btn-primary" id="add-membership-btn">+ Agregar Membresía</button>
+                </div>
+
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Descripción</th>
+                                <th>Duración</th>
+                                <th>Precio</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="memberships-table">
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Attendance Page -->
+            <div id="attendance-page" class="page" style="display: none;">
+                <div class="d-flex justify-between align-center mb-4">
+                    <h3>Registro de Asistencia</h3>
+                    <button class="btn btn-primary" id="add-attendance-btn">+ Registrar Asistencia</button>
+                </div>
+
+                <div class="card">
+                    <div class="d-flex gap-2 mb-4">
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">Fecha Desde</label>
+                            <input type="date" class="form-control" id="attendance-date-from">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">Fecha Hasta</label>
+                            <input type="date" class="form-control" id="attendance-date-to">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">Cliente</label>
+                            <select class="form-control" id="attendance-client-filter">
+                                <option value="">Todos los clientes</option>
+                                <!-- Clients will be loaded here -->
+                            </select>
+                        </div>
+                        <div class="form-group d-flex align-center">
+                            <button class="btn btn-primary" id="filter-attendance-btn" style="margin-top: 25px;">Filtrar</button>
+                        </div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Fecha y Hora</th>
+                                <th>Entrenador</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-table">
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Payments Page -->
+            <div id="payments-page" class="page" style="display: none;">
+                <div class="d-flex justify-between align-center mb-4">
+                    <h3>Gestión de Pagos</h3>
+                    <button class="btn btn-primary" id="add-payment-btn">+ Registrar Pago</button>
+                </div>
+
+                <div class="card">
+                    <div class="d-flex gap-2 mb-4">
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">Fecha Desde</label>
+                            <input type="date" class="form-control" id="payment-date-from">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">Fecha Hasta</label>
+                            <input type="date" class="form-control" id="payment-date-to">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label class="form-label">Estado</label>
+                            <select class="form-control" id="payment-status-filter">
+                                <option value="">Todos los estados</option>
+                                <option value="Pagado">Pagado</option>
+                                <option value="Pendiente">Pendiente</option>
+                                <option value="Reembolsado">Reembolsado</option>
+                            </select>
+                        </div>
+                        <div class="form-group d-flex align-center">
+                            <button class="btn btn-primary" id="filter-payments-btn" style="margin-top: 25px;">Filtrar</button>
+                        </div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Membresía</th>
+                                <th>Monto</th>
+                                <th>Método</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payments-table">
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Trainers Page -->
+            <div id="trainers-page" class="page" style="display: none;">
+                <div class="d-flex justify-between align-center mb-4">
+                    <h3>Gestión de Entrenadores</h3>
+                    <button class="btn btn-primary" id="add-trainer-btn">+ Agregar Entrenador</button>
+                </div>
+
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Especialidad</th>
+                                <th>Email</th>
+                                <th>Teléfono</th>
+                                <th>Clientes Asignados</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trainers-table">
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Reports Page -->
+            <div id="reports-page" class="page" style="display: none;">
+                <h3 class="mb-4">Reportes y Estadísticas</h3>
+
+                <div class="tab-container">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" data-tab="income-report">Reporte de Ingresos</button>
+                        <button class="tab-btn" data-tab="attendance-report">Historial de Asistencia</button>
+                        <button class="tab-btn" data-tab="membership-report">Estado de Membresías</button>
+                        <button class="tab-btn" data-tab="trainer-report">Reporte de Entrenadores</button>
+                    </div>
+
+                    <!-- Income Report Tab -->
+                    <div class="tab-content active" id="income-report">
+                        <div class="card">
+                            <div class="d-flex gap-2 mb-4">
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label">Rango de Fechas</label>
+                                    <select class="form-control" id="income-date-range">
+                                        <option value="day">Día</option>
+                                        <option value="week">Semana</option>
+                                        <option value="month" selected>Mes</option>
+                                        <option value="year">Año</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label">Tipo de Membresía</label>
+                                    <select class="form-control" id="income-membership-type">
+                                        <option value="">Todas las membresías</option>
+                                        <!-- Memberships will be loaded here -->
+                                    </select>
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label">Método de Pago</label>
+                                    <select class="form-control" id="income-payment-method">
+                                        <option value="">Todos los métodos</option>
+                                        <option value="Tarjeta">Tarjeta</option>
+                                        <option value="Efectivo">Efectivo</option>
+                                        <option value="Transferencia">Transferencia</option>
+                                    </select>
+                                </div>
+                                <div class="form-group d-flex align-center">
+                                    <button class="btn btn-primary" id="generate-income-report" style="margin-top: 25px;">Generar</button>
+                                </div>
+                            </div>
+
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Fecha</th>
+                                        <th>Cliente</th>
+                                        <th>Membresía</th>
+                                        <th>Monto (USD)</th>
+                                        <th>Descuento(%)</th>
+                                        <th>Monto Final</th>
+                                        <th>Método de pago</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="income-report-table">
+                                    <!-- Data will be loaded here -->
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="4" style="text-align: right;"><strong>Total:</strong></td>
+                                        <td id="income-total" colspan="5"><strong>$0</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Attendance Report Tab -->
+                    <div class="tab-content" id="attendance-report">
+                        <div class="card">
+                            <div class="d-flex gap-2 mb-4">
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label">Cliente</label>
+                                    <select class="form-control" id="attendance-report-client">
+                                        <option value="">Todos los clientes</option>
+                                        <!-- Clients will be loaded here -->
+                                    </select>
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label">Fecha Desde</label>
+                                    <input type="date" class="form-control" id="attendance-report-date-from">
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label">Fecha Hasta</label>
+                                    <input type="date" class="form-control" id="attendance-report-date-to">
+                                </div>
+                                <div class="form-group d-flex align-center">
+                                    <button class="btn btn-primary" id="generate-attendance-report" style="margin-top: 25px;">Generar</button>
+                                </div>
+                            </div>
+
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID Asistencia</th>
+                                        <th>Fecha y hora</th>
+                                        <th>Cliente</th>
+                                        <th>Entrenador Asignado</th>
+                                        <th>Tipo de Membresía</th>
+                                        <th>Estado de visita</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendance-report-table">
+                                    <!-- Data will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Membership Report Tab -->
+                    <div class="tab-content" id="membership-report">
+                        <div class="card">
+                            <div class="d-flex gap-2 mb-4">
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label">Estado</label>
+                                    <select class="form-control" id="membership-report-status">
+                                        <option value="">Todos los estados</option>
+                                        <option value="Activo">Activo</option>
+                                        <option value="Inactivo">Inactivo</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label">Tipo de Membresía</label>
+                                    <select class="form-control" id="membership-report-type">
+                                        <option value="">Todos los tipos</option>
+                                        <!-- Memberships will be loaded here -->
+                                    </select>
+                                </div>
+                                <div class="form-group d-flex align-center">
+                                    <button class="btn btn-primary" id="generate-membership-report" style="margin-top: 25px;">Generar</button>
+                                </div>
+                            </div>
+
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID Cliente</th>
+                                        <th>Nombre</th>
+                                        <th>Tipo de membresía</th>
+                                        <th>Fecha de inicio</th>
+                                        <th>Estado</th>
+                                        <th>Ultima visita</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="membership-report-table">
+                                    <!-- Data will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Trainer Report Tab -->
+                    <div class="tab-content" id="trainer-report">
+                        <div class="card">
+                            <div class="d-flex gap-2 mb-4">
+                                <div class="form-group" style="flex: 1;">
+                                    <label class="form-label">Entrenador</label>
+                                    <select class="form-control" id="trainer-report-trainer">
+                                        <option value="">Todos los entrenadores</option>
+                                        <!-- Trainers will be loaded here -->
+                                    </select>
+                                </div>
+                                <div class="form-group d-flex align-center">
+                                    <button class="btn btn-primary" id="generate-trainer-report" style="margin-top: 25px;">Generar</button>
+                                </div>
+                            </div>
+
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>ID Entrenador</th>
+                                        <th>Nombre</th>
+                                        <th>Clientes Asignados</th>
+                                        <th>Sesiones Realizadas</th>
+                                        <th>Última Sesión</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="trainer-report-table">
+                                    <!-- Data will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Client Modal -->
+    <div class="modal" id="client-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="client-modal-title">Agregar Cliente</h3>
+                <button class="modal-close" data-close="client-modal">&times;</button>
+            </div>
+            <div id="client-form-alert" class="alert hidden"></div>
+            <form id="client-form">
+                <input type="hidden" id="client-id">
+                <div class="form-group">
+                    <label class="form-label" for="client-name">Nombre</label>
+                    <input type="text" class="form-control" id="client-name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="client-email">Correo electrónico</label>
+                    <input type="email" class="form-control" id="client-email" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="client-phone">Teléfono</label>
+                    <input type="tel" class="form-control" id="client-phone" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="client-birthdate">Fecha de Nacimiento</label>
+                    <input type="date" class="form-control" id="client-birthdate">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="client-gender">Género</label>
+                    <select class="form-control" id="client-gender">
+                        <option value="M">Masculino</option>
+                        <option value="F">Femenino</option>
+                        <option value="O">Otro</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="client-membership">Membresía</label>
+                    <select class="form-control" id="client-membership" required>
+                        <option value="">Seleccionar membresía</option>
+                        <!-- Memberships will be loaded here -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="client-start-date">Fecha de inicio</label>
+                    <input type="date" class="form-control" id="client-start-date" required>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Membership Modal -->
+    <div class="modal" id="membership-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="membership-modal-title">Agregar Membresía</h3>
+                <button class="modal-close" data-close="membership-modal">&times;</button>
+            </div>
+            <div id="membership-form-alert" class="alert hidden"></div>
+            <form id="membership-form">
+                <input type="hidden" id="membership-id">
+                <div class="form-group">
+                    <label class="form-label" for="membership-name">Nombre</label>
+                    <input type="text" class="form-control" id="membership-name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="membership-description">Descripción</label>
+                    <textarea class="form-control" id="membership-description" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="membership-duration">Duración</label>
+                    <select class="form-control" id="membership-duration" required>
+                        <option value="mensual">Mensual</option>
+                        <option value="trimestral">Trimestral</option>
+                        <option value="semestral">Semestral</option>
+                        <option value="anual">Anual</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="membership-price">Precio</label>
+                    <input type="number" class="form-control" id="membership-price" required min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Attendance Modal -->
+    <div class="modal" id="attendance-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="attendance-modal-title">Registrar Asistencia</h3>
+                <button class="modal-close" data-close="attendance-modal">&times;</button>
+            </div>
+            <div id="attendance-form-alert" class="alert hidden"></div>
+            <form id="attendance-form">
+                <input type="hidden" id="attendance-id">
+                <div class="form-group">
+                    <label class="form-label" for="attendance-client">Cliente</label>
+                    <select class="form-control" id="attendance-client" required>
+                        <option value="">Seleccionar cliente</option>
+                        <!-- Clients will be loaded here -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="attendance-date">Fecha</label>
+                    <input type="date" class="form-control" id="attendance-date" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="attendance-time">Hora</label>
+                    <input type="time" class="form-control" id="attendance-time" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="attendance-trainer">Entrenador Asignado</label>
+                    <select class="form-control" id="attendance-trainer">
+                        <option value="">Ninguno</option>
+                        <!-- Trainers will be loaded here -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="attendance-status">Estado</label>
+                    <select class="form-control" id="attendance-status" required>
+                        <option value="Confirmada">Confirmada</option>
+                        <option value="Cancelada">Cancelada</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal" id="payment-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="payment-modal-title">Registrar Pago</h3>
+                <button class="modal-close" data-close="payment-modal">&times;</button>
+            </div>
+            <div id="payment-form-alert" class="alert hidden"></div>
+            <form id="payment-form">
+                <input type="hidden" id="payment-id">
+                <div class="form-group">
+                    <label class="form-label" for="payment-client">Cliente</label>
+                    <select class="form-control" id="payment-client" required>
+                        <option value="">Seleccionar cliente</option>
+                        <!-- Clients will be loaded here -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="payment-membership">Membresía</label>
+                    <select class="form-control" id="payment-membership" required>
+                        <option value="">Seleccionar membresía</option>
+                        <!-- Memberships will be loaded here -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="payment-amount">Monto</label>
+                    <input type="number" class="form-control" id="payment-amount" required min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="payment-discount">Descuento (%)</label>
+                    <input type="number" class="form-control" id="payment-discount" min="0" max="100" value="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="payment-method">Método de Pago</label>
+                    <select class="form-control" id="payment-method" required>
+                        <option value="Tarjeta">Tarjeta</option>
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="Transferencia">Transferencia</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="payment-status">Estado</label>
+                    <select class="form-control" id="payment-status" required>
+                        <option value="Pagado">Pagado</option>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Reembolsado">Reembolsado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="payment-date">Fecha</label>
+                    <input type="date" class="form-control" id="payment-date" required>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Trainer Modal -->
+    <div class="modal" id="trainer-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="trainer-modal-title">Agregar Entrenador</h3>
+                <button class="modal-close" data-close="trainer-modal">&times;</button>
+            </div>
+            <div id="trainer-form-alert" class="alert hidden"></div>
+            <form id="trainer-form">
+                <input type="hidden" id="trainer-id">
+                <div class="form-group">
+                    <label class="form-label" for="trainer-name">Nombre</label>
+                    <input type="text" class="form-control" id="trainer-name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="trainer-specialty">Especialidad</label>
+                    <input type="text" class="form-control" id="trainer-specialty" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="trainer-email">Correo electrónico</label>
+                    <input type="email" class="form-control" id="trainer-email" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="trainer-phone">Teléfono</label>
+                    <input type="tel" class="form-control" id="trainer-phone" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="trainer-schedule">Horario</label>
+                    <input type="text" class="form-control" id="trainer-schedule" placeholder="Ej: Lunes a Viernes, 8am - 4pm">
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Client View Modal -->
+    <div class="modal" id="client-view-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="client-view-name">Detalles de Cliente</h3>
+                <button class="modal-close" data-close="client-view-modal">&times;</button>
+            </div>
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" data-tab="client-details">Información</button>
+                    <button class="tab-btn" data-tab="client-attendance">Asistencia</button>
+                    <button class="tab-btn" data-tab="client-payments">Pagos</button>
+                </div>
+                <div class="tab-content active" id="client-details">
+                    <div class="grid-2">
+                        <div>
+                            <p><strong>ID:</strong> <span id="view-client-id"></span></p>
+                            <p><strong>Nombre:</strong> <span id="view-client-name"></span></p>
+                            <p><strong>Email:</strong> <span id="view-client-email"></span></p>
+                            <p><strong>Teléfono:</strong> <span id="view-client-phone"></span></p>
+                            <p><strong>Fecha de Nacimiento:</strong> <span id="view-client-birthdate"></span></p>
+                        </div>
+                        <div>
+                            <p><strong>Género:</strong> <span id="view-client-gender"></span></p>
+                            <p><strong>Membresía:</strong> <span id="view-client-membership"></span></p>
+                            <p><strong>Fecha de Inicio:</strong> <span id="view-client-start-date"></span></p>
+                            <p><strong>Fecha de Vencimiento:</strong> <span id="view-client-end-date"></span></p>
+                            <p><strong>Estado:</strong> <span id="view-client-status"></span></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-content" id="client-attendance">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha y Hora</th>
+                                <th>Entrenador</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="client-attendance-table">
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="tab-content" id="client-payments">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha</th>
+                                <th>Membresía</th>
+                                <th>Monto</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="client-payments-table">
+                            <!-- Data will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize data storage
+        function initializeLocalStorage() {
+            // Check if we already have data in localStorage
+            if (!localStorage.getItem('gymData')) {
+                // Create initial data structure
+                const initialData = {
+                    clients: [],
+                    trainers: [],
+                    memberships: [
+                        {
+                            id: 1,
+                            name: 'Básica Mensual',
+                            description: 'Acceso a todas las instalaciones en horario regular',
+                            duration: 'mensual',
+                            price: 30
+                        },
+                        {
+                            id: 2,
+                            name: 'Premium Trimestral',
+                            description: 'Acceso ilimitado a todas las instalaciones y clases grupales',
+                            duration: 'trimestral',
+                            price: 75
+                        },
+                        {
+                            id: 3,
+                            name: 'Gold Anual',
+                            description: 'Acceso VIP con entrenador personal y nutricionista',
+                            duration: 'anual',
+                            price: 300
+                        }
+                    ],
+                    attendance: [],
+                    payments: [],
+                    counters: {
+                        clients: 0,
+                        trainers: 0,
+                        attendance: 0,
+                        payments: 0
+                    }
+                };
+                
+                // Save to localStorage
+                localStorage.setItem('gymData', JSON.stringify(initialData));
+            }
+        }
+
+        // Get data from localStorage
+        function getGymData() {
+            return JSON.parse(localStorage.getItem('gymData'));
+        }
+
+        // Save data to localStorage
+        function saveGymData(data) {
+            localStorage.setItem('gymData', JSON.stringify(data));
+        }
+
+        // Generate unique ID for different entities
+        function generateId(entity) {
+            const data = getGymData();
+            data.counters[entity]++;
+            saveGymData(data);
+            return data.counters[entity];
+        }
+
+        // Format date for display
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+        }
+
+        // Format date and time for display
+        function formatDateTime(dateString, timeString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            if (timeString) {
+                const [hours, minutes] = timeString.split(':');
+                date.setHours(hours, minutes);
+            }
+            return date.toLocaleString();
+        }
+
+        // Calculate membership end date
+        function calculateEndDate(startDate, duration) {
+            const date = new Date(startDate);
+            
+            switch(duration) {
+                case 'mensual':
+                    date.setMonth(date.getMonth() + 1);
+                    break;
+                case 'trimestral':
+                    date.setMonth(date.getMonth() + 3);
+                    break;
+                case 'semestral':
+                    date.setMonth(date.getMonth() + 6);
+                    break;
+                case 'anual':
+                    date.setFullYear(date.getFullYear() + 1);
+                    break;
+            }
+            
+            return date.toISOString().split('T')[0];
+        }
+
+        // Check if a membership is active
+        function isMembershipActive(startDate, duration) {
+            const endDate = new Date(calculateEndDate(startDate, duration));
+            return new Date() <= endDate;
+        }
+
+        // Get client by ID
+        function getClientById(id) {
+            const data = getGymData();
+            return data.clients.find(client => client.id === parseInt(id));
+        }
+
+        // Get membership by ID
+        function getMembershipById(id) {
+            const data = getGymData();
+            return data.memberships.find(membership => membership.id === parseInt(id));
+        }
+
+        // Get trainer by ID
+        function getTrainerById(id) {
+            const data = getGymData();
+            return data.trainers.find(trainer => trainer.id === parseInt(id));
+        }
+
+        // Load data into client membership select
+        function loadClientMembershipSelect() {
+            const data = getGymData();
+            const selectElement = document.getElementById('client-membership');
+            selectElement.innerHTML = '<option value="">Seleccionar membresía</option>';
+            
+            data.memberships.forEach(membership => {
+                const option = document.createElement('option');
+                option.value = membership.id;
+                option.textContent = `${membership.name} (${membership.duration})`;
+                selectElement.appendChild(option);
+            });
+        }
+
+        // Load data into payment membership select
+        function loadPaymentMembershipSelect() {
+            const data = getGymData();
+            const selectElement = document.getElementById('payment-membership');
+            selectElement.innerHTML = '<option value="">Seleccionar membresía</option>';
+            
+            data.memberships.forEach(membership => {
+                const option = document.createElement('option');
+                option.value = membership.id;
+                option.textContent = `${membership.name} (${membership.price}$)`;
+                selectElement.appendChild(option);
+            });
+        }
+
+        // Load data into client select
+        function loadClientSelect() {
+            const data = getGymData();
+            const attendanceClientSelect = document.getElementById('attendance-client');
+            const paymentClientSelect = document.getElementById('payment-client');
+            const attendanceFilterSelect = document.getElementById('attendance-client-filter');
+            const attendanceReportSelect = document.getElementById('attendance-report-client');
+            
+            // Clear previous options
+            attendanceClientSelect.innerHTML = '<option value="">Seleccionar cliente</option>';
+            paymentClientSelect.innerHTML = '<option value="">Seleccionar cliente</option>';
+            attendanceFilterSelect.innerHTML = '<option value="">Todos los clientes</option>';
+            attendanceReportSelect.innerHTML = '<option value="">Todos los clientes</option>';
+            
+            // Add active clients
+            data.clients.filter(client => {
+                const membership = getMembershipById(client.membership_id);
+                return isMembershipActive(client.start_date, membership.duration);
+            }).forEach(client => {
+                // For attendance client select
+                const option1 = document.createElement('option');
+                option1.value = client.id;
+                option1.textContent = client.name;
+                attendanceClientSelect.appendChild(option1);
+                
+                // For payment client select
+                const option2 = document.createElement('option');
+                option2.value = client.id;
+                option2.textContent = client.name;
+                paymentClientSelect.appendChild(option2);
+                
+                // For attendance filter select
+                const option3 = document.createElement('option');
+                option3.value = client.id;
+                option3.textContent = client.name;
+                attendanceFilterSelect.appendChild(option3);
+                
+                // For attendance report select
+                const option4 = document.createElement('option');
+                option4.value = client.id;
+                option4.textContent = client.name;
+                attendanceReportSelect.appendChild(option4);
+            });
+        }
+
+        // Load data into trainer select
+        function loadTrainerSelect() {
+            const data = getGymData();
+            const attendanceTrainerSelect = document.getElementById('attendance-trainer');
+            const trainerReportSelect = document.getElementById('trainer-report-trainer');
+            
+            // Clear previous options
+            attendanceTrainerSelect.innerHTML = '<option value="">Ninguno</option>';
+            trainerReportSelect.innerHTML = '<option value="">Todos los entrenadores</option>';
+            
+            data.trainers.forEach(trainer => {
+                // For attendance trainer select
+                const option1 = document.createElement('option');
+                option1.value = trainer.id;
+                option1.textContent = trainer.name;
+                attendanceTrainerSelect.appendChild(option1);
+                
+                // For trainer report select
+                const option2 = document.createElement('option');
+                option2.value = trainer.id;
+                option2.textContent = trainer.name;
+                trainerReportSelect.appendChild(option2);
+            });
+        }
+
+        // Load data into membership type select for reports
+        function loadMembershipTypeSelect() {
+            const data = getGymData();
+            const incomeSelect = document.getElementById('income-membership-type');
+            const membershipReportSelect = document.getElementById('membership-report-type');
+            
+            // Clear previous options
+            incomeSelect.innerHTML = '<option value="">Todas las membresías</option>';
+            membershipReportSelect.innerHTML = '<option value="">Todos los tipos</option>';
+            
+            data.memberships.forEach(membership => {
+                // For income report select
+                const option1 = document.createElement('option');
+                option1.value = membership.id;
+                option1.textContent = membership.name;
+                incomeSelect.appendChild(option1);
+                
+                // For membership report select
+                const option2 = document.createElement('option');
+                option2.value = membership.id;
+                option2.textContent = membership.name;
+                membershipReportSelect.appendChild(option2);
+            });
+        }
+
+        // Load clients table
+        function loadClientsTable() {
+            const data = getGymData();
+            const tableBody = document.getElementById('clients-table');
+            tableBody.innerHTML = '';
+            
+            data.clients.forEach(client => {
+                const membership = getMembershipById(client.membership_id);
+                const endDate = calculateEndDate(client.start_date, membership.duration);
+                const isActive = isMembershipActive(client.start_date, membership.duration);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${client.id}</td>
+                    <td>${client.name}</td>
+                    <td>${client.email}</td>
+                    <td>${client.phone}</td>
+                    <td>${membership.name}</td>
+                    <td>
+                        <span class="badge ${isActive ? 'badge-success' : 'badge-danger'}">
+                            ${isActive ? 'Activo' : 'Inactivo'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-primary" onclick="viewClient(${client.id})">Ver</button>
+                        <button class="btn btn-warning" onclick="editClient(${client.id})">Editar</button>
+                        <button class="btn btn-danger" onclick="deleteClient(${client.id})">Eliminar</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Load memberships table
+        function loadMembershipsTable() {
+            const data = getGymData();
+            const tableBody = document.getElementById('memberships-table');
+            tableBody.innerHTML = '';
+            
+            data.memberships.forEach(membership => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${membership.id}</td>
+                    <td>${membership.name}</td>
+                    <td>${membership.description}</td>
+                    <td>${membership.duration}</td>
+                    <td>$${membership.price}</td>
+                    <td>
+                        <button class="btn btn-warning" onclick="editMembership(${membership.id})">Editar</button>
+                        <button class="btn btn-danger" onclick="deleteMembership(${membership.id})">Eliminar</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Load attendance table
+        function loadAttendanceTable() {
+            const data = getGymData();
+            const tableBody = document.getElementById('attendance-table');
+            tableBody.innerHTML = '';
+            
+            // Sort by date (newest first)
+            const sortedAttendance = [...data.attendance].sort((a, b) => {
+                const dateA = new Date(a.date + 'T' + a.time);
+                const dateB = new Date(b.date + 'T' + b.time);
+                return dateB - dateA;
+            });
+            
+            sortedAttendance.forEach(attendance => {
+                const client = getClientById(attendance.client_id);
+                const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${attendance.id}</td>
+                    <td>${client ? client.name : 'Cliente eliminado'}</td>
+                    <td>${formatDateTime(attendance.date, attendance.time)}</td>
+                    <td>${trainer ? trainer.name : 'Ninguno'}</td>
+                    <td>
+                        <span class="badge ${attendance.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
+                            ${attendance.status}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-warning" onclick="editAttendance(${attendance.id})">Editar</button>
+                        <button class="btn btn-danger" onclick="deleteAttendance(${attendance.id})">Eliminar</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Load payments table
+        function loadPaymentsTable() {
+            const data = getGymData();
+            const tableBody = document.getElementById('payments-table');
+            tableBody.innerHTML = '';
+            
+            // Sort by date (newest first)
+            const sortedPayments = [...data.payments].sort((a, b) => {
+                return new Date(b.date) - new Date(a.date);
+            });
+            
+            sortedPayments.forEach(payment => {
+                const client = getClientById(payment.client_id);
+                const membership = getMembershipById(payment.membership_id);
+                const finalAmount = payment.amount * (1 - payment.discount / 100);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${payment.id}</td>
+                    <td>${client ? client.name : 'Cliente eliminado'}</td>
+                    <td>${membership ? membership.name : 'Membresía eliminada'}</td>
+                    <td>$${finalAmount.toFixed(2)}</td>
+                    <td>${payment.method}</td>
+                    <td>
+                        <span class="badge ${
+                            payment.status === 'Pagado' ? 'badge-success' : 
+                            payment.status === 'Pendiente' ? 'badge-warning' : 'badge-danger'
+                        }">
+                            ${payment.status}
+                        </span>
+                    </td>
+                    <td>${formatDate(payment.date)}</td>
+                    <td>
+                        <button class="btn btn-warning" onclick="editPayment(${payment.id})">Editar</button>
+                        <button class="btn btn-danger" onclick="deletePayment(${payment.id})">Eliminar</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+// Continuing from the provided code
+
+    // Load trainers table
+    function loadTrainersTable() {
+        const data = getGymData();
+        const tableBody = document.getElementById('trainers-table');
+        tableBody.innerHTML = '';
+        
+        data.trainers.forEach(trainer => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${trainer.id}</td>
+                <td>${trainer.name}</td>
+                <td>${trainer.specialty}</td>
+                <td>${trainer.email}</td>
+                <td>${trainer.phone}</td>
+                <td>${trainer.schedule || 'No definido'}</td>
+                <td>
+                    <button class="btn btn-warning" onclick="editTrainer(${trainer.id})">Editar</button>
+                    <button class="btn btn-danger" onclick="deleteTrainer(${trainer.id})">Eliminar</button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    // View client details
+    function viewClient(clientId) {
+        const data = getGymData();
+        const client = data.clients.find(c => c.id === clientId);
+        
+        if (client) {
+            const membership = getMembershipById(client.membership_id);
+            const endDate = calculateEndDate(client.start_date, membership.duration);
+            const isActive = isMembershipActive(client.start_date, membership.duration);
+            
+            // Set client details
+            document.getElementById('view-client-id').textContent = client.id;
+            document.getElementById('view-client-name').textContent = client.name;
+            document.getElementById('view-client-email').textContent = client.email;
+            document.getElementById('view-client-phone').textContent = client.phone;
+            document.getElementById('view-client-birthdate').textContent = formatDate(client.birthdate);
+            document.getElementById('view-client-gender').textContent = 
+                client.gender === 'M' ? 'Masculino' : 
+                client.gender === 'F' ? 'Femenino' : 'Otro';
+            document.getElementById('view-client-membership').textContent = membership.name;
+            document.getElementById('view-client-start-date').textContent = formatDate(client.start_date);
+            document.getElementById('view-client-end-date').textContent = formatDate(endDate);
+            document.getElementById('view-client-status').textContent = isActive ? 'Activo' : 'Inactivo';
+            document.getElementById('client-view-name').textContent = `Cliente: ${client.name}`;
+            
+            // Load client's attendance
+            const attendanceTable = document.getElementById('client-attendance-table');
+            attendanceTable.innerHTML = '';
+            
+            data.attendance
+                .filter(a => a.client_id === clientId)
+                .sort((a, b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time))
+                .forEach(attendance => {
+                    const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${attendance.id}</td>
+                        <td>${formatDateTime(attendance.date, attendance.time)}</td>
+                        <td>${trainer ? trainer.name : 'Ninguno'}</td>
+                        <td>
+                            <span class="badge ${attendance.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
+                                ${attendance.status}
+                            </span>
+                        </td>
+                    `;
+                    attendanceTable.appendChild(row);
+                });
+            
+            // Load client's payments
+            const paymentsTable = document.getElementById('client-payments-table');
+            paymentsTable.innerHTML = '';
+            
+            data.payments
+                .filter(p => p.client_id === clientId)
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .forEach(payment => {
+                    const membership = getMembershipById(payment.membership_id);
+                    const finalAmount = payment.amount * (1 - payment.discount / 100);
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${payment.id}</td>
+                        <td>${formatDate(payment.date)}</td>
+                        <td>${membership ? membership.name : 'Membresía eliminada'}</td>
+                        <td>$${finalAmount.toFixed(2)}</td>
+                        <td>
+                            <span class="badge ${
+                                payment.status === 'Pagado' ? 'badge-success' : 
+                                payment.status === 'Pendiente' ? 'badge-warning' : 'badge-danger'
+                            }">
+                                ${payment.status}
+                            </span>
+                        </td>
+                    `;
+                    paymentsTable.appendChild(row);
+                });
+            
+            // Show modal
+            openModal('client-view-modal');
+        }
+    }
+
+    // Edit client
+    function editClient(clientId) {
+        const data = getGymData();
+        const client = data.clients.find(c => c.id === clientId);
+        
+        if (client) {
+            // Set modal title
+            document.getElementById('client-modal-title').textContent = 'Editar Cliente';
+            
+            // Fill form with client data
+            document.getElementById('client-id').value = client.id;
+            document.getElementById('client-name').value = client.name;
+            document.getElementById('client-email').value = client.email;
+            document.getElementById('client-phone').value = client.phone;
+            document.getElementById('client-birthdate').value = client.birthdate;
+            document.getElementById('client-gender').value = client.gender;
+            document.getElementById('client-membership').value = client.membership_id;
+            document.getElementById('client-start-date').value = client.start_date;
+            
+            // Show modal
+            openModal('client-modal');
+        }
+    }
+
+    // Delete client
+    function deleteClient(clientId) {
+        if (confirm('¿Estás seguro de que deseas eliminar este cliente?')) {
+            const data = getGymData();
+            data.clients = data.clients.filter(c => c.id !== clientId);
+            saveGymData(data);
+            loadClientsTable();
+            loadClientSelect();
+        }
+    }
+
+    // Edit membership
+    function editMembership(membershipId) {
+        const data = getGymData();
+        const membership = data.memberships.find(m => m.id === membershipId);
+        
+        if (membership) {
+            // Set modal title
+            document.getElementById('membership-modal-title').textContent = 'Editar Membresía';
+            
+            // Fill form with membership data
+            document.getElementById('membership-id').value = membership.id;
+            document.getElementById('membership-name').value = membership.name;
+            document.getElementById('membership-description').value = membership.description;
+            document.getElementById('membership-duration').value = membership.duration;
+            document.getElementById('membership-price').value = membership.price;
+            
+            // Show modal
+            openModal('membership-modal');
+        }
+    }
+
+    // Delete membership
+    function deleteMembership(membershipId) {
+        // Check if membership is being used by any client
+        const data = getGymData();
+        const clientUsingMembership = data.clients.some(c => c.membership_id === membershipId);
+        
+        if (clientUsingMembership) {
+            alert('No se puede eliminar esta membresía porque está siendo utilizada por al menos un cliente.');
+            return;
+        }
+        
+        if (confirm('¿Estás seguro de que deseas eliminar esta membresía?')) {
+            data.memberships = data.memberships.filter(m => m.id !== membershipId);
+            saveGymData(data);
+            loadMembershipsTable();
+            loadClientMembershipSelect();
+            loadPaymentMembershipSelect();
+            loadMembershipTypeSelect();
+        }
+    }
+
+    // Edit attendance
+    function editAttendance(attendanceId) {
+        const data = getGymData();
+        const attendance = data.attendance.find(a => a.id === attendanceId);
+        
+        if (attendance) {
+            // Set modal title
+            document.getElementById('attendance-modal-title').textContent = 'Editar Asistencia';
+            
+            // Fill form with attendance data
+            document.getElementById('attendance-id').value = attendance.id;
+            document.getElementById('attendance-client').value = attendance.client_id;
+            document.getElementById('attendance-date').value = attendance.date;
+            document.getElementById('attendance-time').value = attendance.time;
+            document.getElementById('attendance-trainer').value = attendance.trainer_id || '';
+            document.getElementById('attendance-status').value = attendance.status;
+            
+            // Show modal
+            openModal('attendance-modal');
+        }
+    }
+
+    // Delete attendance
+    function deleteAttendance(attendanceId) {
+        if (confirm('¿Estás seguro de que deseas eliminar este registro de asistencia?')) {
+            const data = getGymData();
+            data.attendance = data.attendance.filter(a => a.id !== attendanceId);
+            saveGymData(data);
+            loadAttendanceTable();
+            
+            // Also refresh the attendance filter if it's active
+            const clientFilter = document.getElementById('attendance-client-filter').value;
+            if (clientFilter) {
+                filterAttendanceByClient(clientFilter);
+            }
+        }
+    }
+
+    // Edit trainer
+    function editTrainer(trainerId) {
+        const data = getGymData();
+        const trainer = data.trainers.find(t => t.id === trainerId);
+        
+        if (trainer) {
+            // Set modal title
+            document.getElementById('trainer-modal-title').textContent = 'Editar Entrenador';
+            
+            // Fill form with trainer data
+            document.getElementById('trainer-id').value = trainer.id;
+            document.getElementById('trainer-name').value = trainer.name;
+            document.getElementById('trainer-specialty').value = trainer.specialty;
+            document.getElementById('trainer-email').value = trainer.email;
+            document.getElementById('trainer-phone').value = trainer.phone;
+            document.getElementById('trainer-schedule').value = trainer.schedule || '';
+            
+            // Show modal
+            openModal('trainer-modal');
+        }
+    }
+
+    // Delete trainer
+    function deleteTrainer(trainerId) {
+        // Check if trainer is assigned to any attendance
+        const data = getGymData();
+        const attendanceUsingTrainer = data.attendance.some(a => a.trainer_id === trainerId);
+        
+        if (attendanceUsingTrainer) {
+            alert('No se puede eliminar este entrenador porque está asignado a sesiones de entrenamiento.');
+            return;
+        }
+        
+        if (confirm('¿Estás seguro de que deseas eliminar este entrenador?')) {
+            data.trainers = data.trainers.filter(t => t.id !== trainerId);
+            saveGymData(data);
+            loadTrainersTable();
+            loadTrainerSelect();
+        }
+    }
+
+    // Edit payment
+    function editPayment(paymentId) {
+        const data = getGymData();
+        const payment = data.payments.find(p => p.id === paymentId);
+        
+        if (payment) {
+            // Set modal title
+            document.getElementById('payment-modal-title').textContent = 'Editar Pago';
+            
+            // Fill form with payment data
+            document.getElementById('payment-id').value = payment.id;
+            document.getElementById('payment-client').value = payment.client_id;
+            document.getElementById('payment-membership').value = payment.membership_id;
+            document.getElementById('payment-amount').value = payment.amount;
+            document.getElementById('payment-discount').value = payment.discount;
+            document.getElementById('payment-method').value = payment.method;
+            document.getElementById('payment-status').value = payment.status;
+            document.getElementById('payment-date').value = payment.date;
+            
+            // Show modal
+            openModal('payment-modal');
+        }
+    }
+
+    // Delete payment
+    function deletePayment(paymentId) {
+        if (confirm('¿Estás seguro de que deseas eliminar este registro de pago?')) {
+            const data = getGymData();
+            data.payments = data.payments.filter(p => p.id !== paymentId);
+            saveGymData(data);
+            loadPaymentsTable();
+        }
+    }
+
+    // Filter attendance by client
+    function filterAttendanceByClient(clientId) {
+        const data = getGymData();
+        const tableBody = document.getElementById('attendance-table');
+        tableBody.innerHTML = '';
+        
+        let filteredAttendance = data.attendance;
+        
+        if (clientId) {
+            filteredAttendance = data.attendance.filter(a => a.client_id === parseInt(clientId));
+        }
+        
+        // Sort by date (newest first)
+        filteredAttendance.sort((a, b) => {
+            const dateA = new Date(a.date + 'T' + a.time);
+            const dateB = new Date(b.date + 'T' + b.time);
+            return dateB - dateA;
+        });
+        
+        filteredAttendance.forEach(attendance => {
+            const client = getClientById(attendance.client_id);
+            const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${attendance.id}</td>
+                <td>${client ? client.name : 'Cliente eliminado'}</td>
+                <td>${formatDateTime(attendance.date, attendance.time)}</td>
+                <td>${trainer ? trainer.name : 'Ninguno'}</td>
+                <td>
+                    <span class="badge ${attendance.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
+                        ${attendance.status}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-warning" onclick="editAttendance(${attendance.id})">Editar</button>
+                    <button class="btn btn-danger" onclick="deleteAttendance(${attendance.id})">Eliminar</button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    // Handle attendance filter change
+    document.getElementById('attendance-client-filter').addEventListener('change', function() {
+        filterAttendanceByClient(this.value);
+    });
+
+    // Generate attendance report
+    function generateAttendanceReport() {
+        const clientId = document.getElementById('attendance-report-client').value;
+        const startDate = document.getElementById('attendance-report-start-date').value;
+        const endDate = document.getElementById('attendance-report-end-date').value;
+        
+        const data = getGymData();
+        let filteredAttendance = data.attendance;
+        
+        // Filter by client if selected
+        if (clientId) {
+            filteredAttendance = filteredAttendance.filter(a => a.client_id === parseInt(clientId));
+        }
+        
+        // Filter by date range if provided
+        if (startDate && endDate) {
+            filteredAttendance = filteredAttendance.filter(a => {
+                const attendanceDate = new Date(a.date);
+                return attendanceDate >= new Date(startDate) && attendanceDate <= new Date(endDate);
+            });
+        }
+        
+        // Sort by date
+        filteredAttendance.sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        // Generate report data
+        const reportTable = document.getElementById('attendance-report-table');
+        reportTable.innerHTML = '';
+        
+        // Group attendance by date
+        const attendanceByDate = {};
+        filteredAttendance.forEach(attendance => {
+            if (!attendanceByDate[attendance.date]) {
+                attendanceByDate[attendance.date] = 0;
+            }
+            if (attendance.status === 'Confirmada') {
+                attendanceByDate[attendance.date]++;
+            }
+        });
+        
+        // Create table rows
+        Object.keys(attendanceByDate).sort().forEach(date => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${formatDate(date)}</td>
+                <td>${attendanceByDate[date]}</td>
+            `;
+            reportTable.appendChild(row);
+        });
+        
+        // Generate summary
+        const totalAttendance = Object.values(attendanceByDate).reduce((sum, count) => sum + count, 0);
+        const uniqueDates = Object.keys(attendanceByDate).length;
+        const averageAttendance = uniqueDates > 0 ? (totalAttendance / uniqueDates).toFixed(2) : 0;
+        
+        document.getElementById('attendance-report-total').textContent = totalAttendance;
+        document.getElementById('attendance-report-average').textContent = averageAttendance;
+    }
+
+    // Generate income report
+    function generateIncomeReport() {
+        const membershipId = document.getElementById('income-membership-type').value;
+        const startDate = document.getElementById('income-report-start-date').value;
+        const endDate = document.getElementById('income-report-end-date').value;
+        
+        const data = getGymData();
+        let filteredPayments = data.payments;
+        
+        // Filter by membership if selected
+        if (membershipId) {
+            filteredPayments = filteredPayments.filter(p => p.membership_id === parseInt(membershipId));
+        }
+        
+        // Filter by date range if provided
+        if (startDate && endDate) {
+            filteredPayments = filteredPayments.filter(p => {
+                const paymentDate = new Date(p.date);
+                return paymentDate >= new Date(startDate) && paymentDate <= new Date(endDate);
+            });
+        }
+        
+        // Filter by status (only count paid payments)
+        filteredPayments = filteredPayments.filter(p => p.status === 'Pagado');
+        
+        // Sort by date
+        filteredPayments.sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        // Generate report data
+        const reportTable = document.getElementById('income-report-table');
+        reportTable.innerHTML = '';
+        
+        // Group payments by month
+        const paymentsByMonth = {};
+        filteredPayments.forEach(payment => {
+            const date = new Date(payment.date);
+            const monthYear = `${date.getFullYear()}-${date.getMonth() + 1}`;
+            
+            if (!paymentsByMonth[monthYear]) {
+                paymentsByMonth[monthYear] = 0;
+            }
+            
+            const finalAmount = payment.amount * (1 - payment.discount / 100);
+            paymentsByMonth[monthYear] += finalAmount;
+        });
+        
+        // Create table rows
+        Object.keys(paymentsByMonth).sort().forEach(monthYear => {
+            const [year, month] = monthYear.split('-');
+            const date = new Date(year, month - 1, 1);
+            const monthName = date.toLocaleString('default', { month: 'long' });
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${monthName} ${year}</td>
+                <td>$${paymentsByMonth[monthYear].toFixed(2)}</td>
+            `;
+            reportTable.appendChild(row);
+        });
+        
+        // Generate summary
+        const totalIncome = Object.values(paymentsByMonth).reduce((sum, amount) => sum + amount, 0);
+        const uniqueMonths = Object.keys(paymentsByMonth).length;
+        const averageIncome = uniqueMonths > 0 ? (totalIncome / uniqueMonths).toFixed(2) : 0;
+        
+        document.getElementById('income-report-total').textContent = `$${totalIncome.toFixed(2)}`;
+        document.getElementById('income-report-average').textContent = `$${averageIncome}`;
+    }
+
+    // Generate membership report
+    function generateMembershipReport() {
+        const membershipId = document.getElementById('membership-report-type').value;
+        
+        const data = getGymData();
+        let filteredClients = data.clients;
+        
+        // Filter by membership if selected
+        if (membershipId) {
+            filteredClients = filteredClients.filter(c => c.membership_id === parseInt(membershipId));
+        }
+        
+        // Count active and inactive clients
+        const activeMemberships = filteredClients.filter(client => {
+            const membership = getMembershipById(client.membership_id);
+            return isMembershipActive(client.start_date, membership.duration);
+        });
+        
+        const inactiveMemberships = filteredClients.filter(client => {
+            const membership = getMembershipById(client.membership_id);
+            return !isMembershipActive(client.start_date, membership.duration);
+        });
+        
+        // Generate report data
+        const reportTable = document.getElementById('membership-report-table');
+        reportTable.innerHTML = '';
+        
+        // Group clients by membership type
+        const clientsByMembership = {};
+        filteredClients.forEach(client => {
+            const membership = getMembershipById(client.membership_id);
+            if (!membership) return;
+            
+            if (!clientsByMembership[membership.id]) {
+                clientsByMembership[membership.id] = {
+                    name: membership.name,
+                    active: 0,
+                    inactive: 0,
+                    total: 0
+                };
+            }
+            
+            clientsByMembership[membership.id].total++;
+            
+            if (isMembershipActive(client.start_date, membership.duration)) {
+                clientsByMembership[membership.id].active++;
+            } else {
+                clientsByMembership[membership.id].inactive++;
+            }
+        });
+        
+        // Create table rows
+        Object.values(clientsByMembership).forEach(membershipData => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${membershipData.name}</td>
+                <td>${membershipData.active}</td>
+                <td>${membershipData.inactive}</td>
+                <td>${membershipData.total}</td>
+            `;
+            reportTable.appendChild(row);
+        });
+        
+        // Generate summary
+        document.getElementById('membership-report-active').textContent = activeMemberships.length;
+        document.getElementById('membership-report-inactive').textContent = inactiveMemberships.length;
+        document.getElementById('membership-report-total').textContent = filteredClients.length;
+    }
+
+    // Generate trainer report
+    function generateTrainerReport() {
+        const trainerId = document.getElementById('trainer-report-trainer').value;
+        
+        const data = getGymData();
+        let filteredTrainers = data.trainers;
+        
+        // Filter by trainer if selected
+        if (trainerId) {
+            filteredTrainers = filteredTrainers.filter(t => t.id === parseInt(trainerId));
+        }
+        
+        // Generate report data
+        const reportTable = document.getElementById('trainer-report-table');
+        reportTable.innerHTML = '';
+        
+        filteredTrainers.forEach(trainer => {
+            // Count assigned clients
+            const assignedClients = new Set();
+            data.attendance.forEach(attendance => {
+                if (attendance.trainer_id === trainer.id) {
+                    assignedClients.add(attendance.client_id);
+                }
+            });
+            
+            // Count completed sessions
+            const completedSessions = data.attendance.filter(
+                a => a.trainer_id === trainer.id && a.status === 'Confirmada'
+            ).length;
+            
+            // Find last session
+            const trainerSessions = data.attendance.filter(a => a.trainer_id === trainer.id);
+            let lastSession = 'Ninguna';
+            
+            if (trainerSessions.length > 0) {
+                const sortedSessions = trainerSessions.sort((a, b) => {
+                    return new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time);
+                });
+                lastSession = formatDateTime(sortedSessions[0].date, sortedSessions[0].time);
+            }
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${trainer.id}</td>
+                <td>${trainer.name}</td>
+                <td>${assignedClients.size}</td>
+                <td>${completedSessions}</td>
+                <td>${lastSession}</td>
+            `;
+            reportTable.appendChild(row);
+        });
+    }
+
+    // Modal Functions
+    function openModal(modalId) {
+        document.getElementById(modalId).style.display = 'block';
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    // Close modal when clicking on X or outside the modal
+    document.addEventListener('click', function(event) {
+        if (event.target.classList.contains('modal-close') || event.target.hasAttribute('data-close')) {
+            const modalId = event.target.getAttribute('data-close') || event.target.closest('.modal').id;
+            closeModal(modalId);
+        }
+        
+        if (event.target.classList.contains('modal')) {
+            closeModal(event.target.id);
+        }
+    });
+
+    // Tab functionality
+    document.querySelectorAll('.tab-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const tabId = this.getAttribute('data-tab');
+            
+            // Remove active class from all buttons and contents
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active class to clicked button and corresponding content
+            this.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+
+    // Form submissions
+    // Client form
+    document.getElementById('client-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        const data = getGymData();
+        const clientId = document.getElementById('client-id').value;
+        
+        const client = {
+            name: document.getElementById('client-name').value,
+            email: document.getElementById('client-email').value,
+            phone: document.getElementById('client-phone').value,
+            birthdate: document.getElementById('client-birthdate').value,
+            gender: document.getElementById('client-gender').value,
+            membership_id: parseInt(document.getElementById('client-membership').value),
+            start_date: document.getElementById('client-start-date').value
+        };
+        
+        if (clientId) {
+            // Update existing client
+            client.id = parseInt(clientId);
+            const index = data.clients.findIndex(c => c.id === client.id);
+            if (index !== -1) {
+                data.clients[index] = client;
+            }
+        } else {
+            // Add new client
+            client.id = generateId('clients');
+            data.clients.push(client);
+        }
+        
+        saveGymData(data);
+        loadClientsTable();
+        loadClientSelect();
+        closeModal('client-modal');
+        this.reset();
+        document.getElementById('client-id').value = '';
+    });
+
+    // Membership form
+    document.getElementById('membership-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        const data = getGymData();
+        const membershipId = document.getElementById('membership-id').value;
+        
+        const membership = {
+            name: document.getElementById('membership-name').value,
+            description: document.getElementById('membership-description').value,
+            duration: document.getElementById('membership-duration').value,
+            price: parseFloat(document.getElementById('membership-price').value)
+        };
+        
+        if (membershipId) {
+            // Update existing membership
+            membership.id = parseInt(membershipId);
+            const index = data.memberships.findIndex(m => m.id === membership.id);
+            if (index !== -1) {
+                data.memberships[index] = membership;
+            }
+        } else {
+            // Add new membership
+            membership.id = data.memberships.length > 0 ? 
+                Math.max(...data.memberships.map(m => m.id)) + 1 : 1;
+            data.memberships.push(membership);
+        }
+        
+        saveGymData(data);
+        loadMembershipsTable();
+        loadClientMembershipSelect();
+        loadPaymentMembershipSelect();
+        loadMembershipTypeSelect();
+        closeModal('membership-modal');
+        this.reset();
+        document.getElementById('membership-id').value = '';
+    });
+
+    // Attendance form
+    document.getElementById('attendance-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        const data = getGymData();
+        const attendanceId = document.getElementById('attendance-id').value;
+        
+        const attendance = {
+            client_id: parseInt(document.getElementById('attendance-client').value),
+            date: document.getElementById('attendance-date').value,
+            time: document.getElementById('attendance-time').value,
+            status: document.getElementById('attendance-status').value
+        };
+        
+        // Add trainer if selected
+        const trainerId = document.getElementById('attendance-trainer').value;
+        if (trainerId) {
+            attendance.trainer_id = parseInt(trainerId);
+        }
+        
+        if (attendanceId) {
+            // Update existing attendance
+            attendance.id = parseInt(attendanceId);
+            const index = data.attendance.findIndex(a => a.id === attendance.id);
+            if (index !== -1) {
+                data.attendance[index] = attendance;
+            }
+        } else {
+            // Add new attendance
+            attendance.id = generateId('attendance');
+            data.attendance.push(attendance);
+        }
+        
+        saveGymData(data);
+        loadAttendanceTable();
+        
+        // Refresh the attendance filter if it's active
+        const clientFilter = document.getElementById('attendance-client-filter').value;
+        if (clientFilter) {
+            filterAttendanceByClient(clientFilter);
+        }
+        
+        closeModal('attendance-modal');
+        this.reset();
+        document.getElementById('attendance-id').value = '';
+    });
+
+    // Payment form
+    document.getElementById('payment-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        
+        const data = getGymData();
+        const paymentId = document.getElementById('payment-id').value;
+        
+        const payment = {
+            client_id: parseInt(document.getElementById('payment-client').value),
+            membership_id: parseInt(document.getElementById('payment-membership').value),
+            amount: parseFloat(document.getElementById('payment-amount').value),
+            discount: parseFloat(document.getElementById('payment-discount').value),
+            method: document.getElementById('payment-method').value,
+            status: document.getElementById('payment-status').value,
+            date: document.getElementById('payment-date').value
+        };
+        
+        if (paymentId) {
+            // Update existing payment
+            payment.id = parseInt(paymentId);
+            const index = data.payments.findIndex(p => p.id === payment.id);
+            if (index !== -1) {
+                data.payments[index] = payment;
+            }
+        } else {
+            // Add new payment
+            payment.id = generateId('payments');
+            data.payments.push(payment);
+        }
+        
+        saveGymData(data);
+        loadPaymentsTable();
+        closeModal('payment-modal');
+        this.reset();
+        document.getElementById('payment-id').value = '';
+    });
+
+    // Trainer form
+    document.getElementById('trainer-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+    
+    const data = getGymData();
+    const trainerId = document.getElementById('trainer-id').value;
+    
+    const trainer = {
+        name: document.getElementById('trainer-name').value,
+        specialty: document.getElementById('trainer-specialty').value,
+        email: document.getElementById('trainer-email').value,
+        phone: document.getElementById('trainer-phone').value,
+        schedule: document.getElementById('trainer-schedule').value
+    };
+    
+    if (trainerId) {
+        // Update existing trainer
+        trainer.id = parseInt(trainerId);
+        const index = data.trainers.findIndex(t => t.id === trainer.id);
+        if (index !== -1) {
+            data.trainers[index] = trainer;
+        }
+    } else {
+        // Add new trainer
+        trainer.id = generateId('trainers');
+        data.trainers.push(trainer);
+    }
+    
+    saveGymData(data);
+    loadTrainersTable();
+    loadTrainerSelect();
+    closeModal('trainer-modal');
+    this.reset();
+    document.getElementById('trainer-id').value = '';
+});
+
+// Initialize the application
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if local storage has data, otherwise initialize with demo data
+    if (!localStorage.getItem('gymData')) {
+        initializeDemoData();
+    }
+    
+    // Load data into all tables and selects
+    loadClientsTable();
+    loadMembershipsTable();
+    loadAttendanceTable();
+    loadPaymentsTable();
+    loadTrainersTable();
+    
+    // Load all select elements
+    loadClientSelect();
+    loadClientMembershipSelect();
+    loadPaymentMembershipSelect();
+    loadTrainerSelect();
+    loadMembershipTypeSelect();
+    
+    // Show dashboard tab by default
+    document.querySelector('.tab-btn[data-tab="dashboard"]').click();
+});

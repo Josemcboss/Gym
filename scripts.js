@@ -360,3 +360,12 @@ function loadAttendanceTable() {
 
     updateDashboardCounts(); // Actualizar los contadores
 }
+document.getElementById('add-trainer-btn').addEventListener('click', function() {
+    // Limpiar el formulario antes de abrir el modal
+    document.getElementById('trainer-form').reset();
+    document.getElementById('trainer-id').value = '';
+    document.getElementById('trainer-modal-title').textContent = 'Agregar Entrenador';
+    
+    // Abrir el modal
+    openModal('trainer-modal');
+});

@@ -75,7 +75,7 @@ document.getElementById("client-form").addEventListener("submit", function(event
 
     // Crear un nuevo cliente
     let client = {
-        id: generateId("clients"),
+        cedula: document.getElementById("client-cedula").value,
         name: document.getElementById("client-name").value,
         email: document.getElementById("client-email").value,
         phone: document.getElementById("client-phone").value,
@@ -109,7 +109,7 @@ function loadClientsTable() {
             let membership = getMembershipById(client.membership_id); // Obtener la membresía por ID
             let row = document.createElement("tr");
             row.innerHTML = `
-                <td>${client.id}</td>
+                <td>${client.cedula}</td>
                 <td>${client.name}</td>
                 <td>${client.email}</td>
                 <td>${client.phone}</td>
@@ -276,9 +276,6 @@ function deleteMembership(membershipId) {
 
 
 //Asistencia
-document.getElementById("add-attendance-btn").addEventListener("click", function() {
-    openModal("attendance-modal");
-});
 
 function loadClientsInSelect() {
     let data = getGymData(); // Obtener datos desde localStorage
@@ -319,7 +316,7 @@ document.getElementById("attendance-form").addEventListener("submit", function(e
     // Crear nueva entrada de asistencia
     let attendance = {
         id: generateId("attendance"),
-        client_id: parseInt(document.getElementById("attendance-client").value),
+        client_cedula: document.getElementById('attendance-client').value,
         date: document.getElementById("attendance-date").value,
         time: document.getElementById("attendance-time").value,
         trainer_id: parseInt(document.getElementById("attendance-trainer").value),
@@ -360,12 +357,56 @@ function loadAttendanceTable() {
 
     updateDashboardCounts(); // Actualizar los contadores
 }
-document.getElementById('add-trainer-btn').addEventListener('click', function() {
-    // Limpiar el formulario antes de abrir el modal
-    document.getElementById('trainer-form').reset();
-    document.getElementById('trainer-id').value = '';
-    document.getElementById('trainer-modal-title').textContent = 'Agregar Entrenador';
+
+function loadClientsInSelect() {
+    // Obtiene todos los datos del localStorage
+    let data = getGymData();
     
-    // Abrir el modal
-    openModal('trainer-modal');
+    // Ubica el select del modal de asistencia por su ID
+    let clientSelect = document.getElementById("attendance-client");
+    
+    // Limpia las opciones previas
+    clientSelect.innerHTML = "<option value=''>Seleccionar cliente</option>";
+
+    // Recorre la lista de clientes y crea un <option> por cada uno
+    data.clients.forEach(client => {
+        let option = document.createElement("option");
+        // El value será la cédula
+        option.value = client.cedula;
+        // El texto que ve el usuario en la lista (puede ser solo cédula o cédula + nombre)
+        option.textContent = client.cedula; 
+        // option.textContent = `${client.cedula} - ${client.name}`; // Si prefieres ambas cosas
+        clientSelect.appendChild(option);
+    });
+}
+
+document.getElementById("attendance-client").addEventListener("change", function() {
+    const selectedCedula = this.value;
+    if (!selectedCedula) {
+        // Si no se selecciona nada, limpia los campos
+        document.getElementById("attendance-client-name").value = "";
+        document.getElementById("attendance-date").value = "";
+        document.getElementById("attendance-time").value = "";
+        return;
+    }
+
+    // Obtiene los datos de los clientes
+    const data = getGymData();
+    // Busca el cliente que tenga la cédula seleccionada
+    const selectedClient = data.clients.find(c => c.cedula === selectedCedula);
+
+    // Si se encuentra el cliente, se autocompleta el nombre
+    if (selectedClient) {
+        document.getElementById("attendance-client-name").value = selectedClient.name;
+    }
+
+    // Establece la fecha actual
+    const now = new Date();
+    const isoDate = now.toISOString().split("T")[0];
+    document.getElementById("attendance-date").value = isoDate;
+
+    // Establece la hora actual
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById("attendance-time").value = `${hours}:${minutes}`;
 });

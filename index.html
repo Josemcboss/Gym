@@ -524,7 +524,11 @@
             </div>
             <div id="client-form-alert" class="alert hidden"></div>
             <form id="client-form">
-                <input type="text" class="form-control" id="client-id" placeholder="Cédula" required> 
+                <input type="hidden" id="client-id">
+                <div class="form-group">
+                    <label class="form-label" for="client-cedula">Cédula</label>
+                    <input type="text" class="form-control" id="client-cedula" required>
+                </div>                
                 <div class="form-group">
                     <label class="form-label" for="client-name">Nombre</label>
                     <input type="text" class="form-control" id="client-name" required>
@@ -608,48 +612,64 @@
     <!-- Attendance Modal -->
     <div class="modal" id="attendance-modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="attendance-modal-title">Registrar Asistencia</h3>
-                <button class="modal-close" data-close="attendance-modal">&times;</button>
+          <div class="modal-header">
+            <h3 id="attendance-modal-title">Registrar Asistencia</h3>
+            <button class="modal-close" data-close="attendance-modal">&times;</button>
+          </div>
+          <div id="attendance-form-alert" class="alert hidden"></div>
+          
+          <form id="attendance-form">
+            <!-- Seleccionar la cédula del cliente -->
+            <div class="form-group">
+              <label class="form-label" for="attendance-client">Cliente (Cédula)</label>
+              <select class="form-control" id="attendance-client" required>
+                <option value="">Seleccionar cliente</option>
+                <!-- Aquí se cargan cédulas por JavaScript -->
+              </select>
             </div>
-            <div id="attendance-form-alert" class="alert hidden"></div>
-            <form id="attendance-form">
-                <input type="hidden" id="attendance-id">
-                <div class="form-group">
-                    <label class="form-label" for="attendance-client">Cliente</label>
-                    <select class="form-control" id="attendance-client" required>
-                        <option value="">Seleccionar cliente</option>
-                        <!-- Clients will be loaded here -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="attendance-date">Fecha</label>
-                    <input type="date" class="form-control" id="attendance-date" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="attendance-time">Hora</label>
-                    <input type="time" class="form-control" id="attendance-time" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="attendance-trainer">Entrenador Asignado</label>
-                    <select class="form-control" id="attendance-trainer">
-                        <option value="">Ninguno</option>
-                        <!-- Trainers will be loaded here -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="attendance-status">Estado</label>
-                    <select class="form-control" id="attendance-status" required>
-                        <option value="Confirmada">Confirmada</option>
-                        <option value="Cancelada">Cancelada</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <button type="submit" class="btn btn-primary">Guardar</button>
-                </div>
-            </form>
+      
+            <!-- Campo para mostrar automáticamente el nombre del cliente -->
+            <div class="form-group">
+              <label class="form-label" for="attendance-client-name">Nombre del Cliente</label>
+              <input type="text" class="form-control" id="attendance-client-name" readonly>
+            </div>
+      
+            <!-- Fecha -->
+            <div class="form-group">
+              <label class="form-label" for="attendance-date">Fecha</label>
+              <input type="date" class="form-control" id="attendance-date" required>
+            </div>
+      
+            <!-- Hora -->
+            <div class="form-group">
+              <label class="form-label" for="attendance-time">Hora</label>
+              <input type="time" class="form-control" id="attendance-time" required>
+            </div>
+      
+            <!-- Entrenador Asignado -->
+            <div class="form-group">
+              <label class="form-label" for="attendance-trainer">Entrenador Asignado</label>
+              <select class="form-control" id="attendance-trainer">
+                <option value="">Ninguno</option>
+                <!-- Entrenadores si corresponde -->
+              </select>
+            </div>
+      
+            <!-- Estado -->
+            <div class="form-group">
+              <label class="form-label" for="attendance-status">Estado</label>
+              <select class="form-control" id="attendance-status" required>
+                <option value="Confirmada">Confirmada</option>
+                <option value="Cancelada">Cancelada</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+          </form>
         </div>
-    </div>
+      </div>
 
     <!-- Payment Modal -->
     <div class="modal" id="payment-modal">
@@ -763,7 +783,7 @@
                 <div class="tab-content active" id="client-details">
                     <div class="grid-2">
                         <div>
-                            <p><strong>Cédula:</strong> <span id="view-client-id"></span></p>
+                            <p><strong>ID:</strong> <span id="view-client-id"></span></p>
                             <p><strong>Nombre:</strong> <span id="view-client-name"></span></p>
                             <p><strong>Email:</strong> <span id="view-client-email"></span></p>
                             <p><strong>Teléfono:</strong> <span id="view-client-phone"></span></p>
@@ -925,10 +945,10 @@
         }
 
         // Get client by ID
-        function getClientById(id) {
-            const data = getGymData();
-            return data.clients.find(client => client.id === parseInt(id));
-        }
+        function getClientByCedula(cedula) {
+    const data = getGymData();
+    return data.clients.find(client => client.cedula === cedula);
+}
 
         // Get membership by ID
         function getMembershipById(id) {
@@ -1078,7 +1098,7 @@
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${client.id}</td>
+                    <td>${client.cedula}</td>
                     <td>${client.name}</td>
                     <td>${client.email}</td>
                     <td>${client.phone}</td>
@@ -1135,7 +1155,7 @@
             });
             
             sortedAttendance.forEach(attendance => {
-                const client = getClientById(attendance.client_id);
+                const client = getClientByCedula(attendance.client_cedula);
                 const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
                 
                 const row = document.createElement('tr');
@@ -1170,7 +1190,7 @@
             });
             
             sortedPayments.forEach(payment => {
-                const client = getClientById(payment.client_id);
+                const client = getClientByCedula(payment.client_cedula);
                 const membership = getMembershipById(payment.membership_id);
                 const finalAmount = payment.amount * (1 - payment.discount / 100);
                 
@@ -1517,7 +1537,7 @@
         });
         
         filteredAttendance.forEach(attendance => {
-            const client = getClientById(attendance.client_id);
+            const client = getClientByCedula(attendance.client_cedula);
             const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
             
             const row = document.createElement('tr');
@@ -2052,5 +2072,3 @@ document.addEventListener('DOMContentLoaded', function() {
     // Show dashboard tab by default
     document.querySelector('.tab-btn[data-tab="dashboard"]').click();
 });
-
-<script defer src="scripts.js"></script>

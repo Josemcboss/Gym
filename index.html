@@ -477,7 +477,7 @@
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>ID Cliente</th>
+                                        <th>Cédula</th>
                                         <th>Nombre</th>
                                         <th>Tipo de membresía</th>
                                         <th>Fecha de inicio</th>
@@ -511,7 +511,7 @@
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
+                                        <th>Cédula</th>
                                         <th>Nombre</th>
                                         <th>Especialidad</th>
                                         <th>Sesiones Totales</th>
@@ -551,6 +551,8 @@
                     <input type="tel" class="form-control" id="client-phone" 
                            maxlength="10" pattern="[0-9]*" required 
                            placeholder="Solo números">
+                           <small id="client-phone-count" class="text-muted">0 / 10</small>
+                           <small id="client-phone-warning" class="text-danger" style="display: none;">Máximo 10 números permitidos.</small>
                 </div>          
                 <div class="form-group">
                     <label class="form-label" for="client-name">Nombre</label>
@@ -763,8 +765,16 @@
             <form id="trainer-form">
                 <input type="hidden" id="trainer-id">
                 <div class="form-group">
+                    <label class="form-label" for="trainer-cedula">Cédula</label>
+                    <input type="text" class="form-control" id="trainer-cedula" required maxlength="11">
+                    <small id="trainer-cedula-count" class="text-muted">0 / 11</small>
+                    <small id="trainer-cedula-warning" class="text-danger" style="display: none;">Máximo 11 caracteres permitidos.</small>
+                  </div>                                    
+                <div class="form-group">
                     <label class="form-label" for="trainer-name">Nombre</label>
-                    <input type="text" class="form-control" id="trainer-name" pattern="[A-Za-záéíóúÁÉÍÓÚñÑ\s]+" required>
+                    <input type="text" class="form-control" id="trainer-name" pattern="[A-Za-záéíóúÁÉÍÓÚñÑ\s]+" maxlength="50" required>
+                    <small id="trainer-name-count" class="text-muted">0 / 50</small>
+                    <small id="trainer-name-warning" class="text-danger" style="display: none;">Máximo 50 caracteres permitidos.</small>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-specialty">Especialidad</label>
@@ -777,17 +787,24 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-email">Correo electrónico</label>
-                    <input type="email" class="form-control" id="trainer-email" required>
+                    <input type="email" class="form-control" id="trainer-email" maxlength="75" required>
+                    <small id="trainer-email-count" class="text-muted">0 / 75</small>
+                    <small id="trainer-email-warning" class="text-danger" style="display: none;">Máximo 75 caracteres permitidos.</small>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-phone">Teléfono</label>
                     <input type="tel" class="form-control" id="trainer-phone" 
                            maxlength="10" pattern="[0-9]*" required 
                            placeholder="Solo números">
+                           <small id="trainer-phone-count" class="text-muted">0 / 10</small>
+                           <small id="trainer-phone-warning" class="text-danger" style="display: none;">Máximo 10 números permitidos.</small>
+
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-schedule">Horario</label>
-                    <input type="text" class="form-control" id="trainer-schedule" placeholder="Ej: Lunes a Viernes, 8am - 4pm">
+                    <input type="text" class="form-control" id="trainer-schedule" placeholder="Ej: Lunes a Viernes, 8am - 4pm" maxlength="50" required>
+                    <small id="trainer-schedule-count" class="text-muted">0 / 50</small>
+                    <small id="trainer-schedule-warning" class="text-danger" style="display: none;">Máximo 50 caracteres permitidos.</small>
                 </div>
                 <div class="form-group">
                     <button type="submit" class="btn btn-primary">Guardar</button>
@@ -1391,7 +1408,7 @@ function loadPaymentsTable() {
         data.trainers.forEach(trainer => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${trainer.id}</td>
+                <td>${trainer.cedula}</td>
                 <td>${trainer.name}</td>
                 <td>${trainer.specialty}</td>
                 <td>${trainer.email}</td>
@@ -2078,7 +2095,7 @@ function getLastAttendance(cedula) {
         // Create table row
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${trainer.id}</td>
+            <td>${trainer.cedula}</td>
             <td>${trainer.name}</td>
             <td>${trainer.specialty}</td>
             <td>${trainerSessions.length}</td>
@@ -3013,6 +3030,108 @@ document.querySelectorAll('#client-view-modal .tab-btn').forEach(button => {
             document.getElementById(tab).classList.add('active');
         });
     });
+
+    document.getElementById('trainer-cedula').addEventListener('input', function () {
+    // Limpiar caracteres no numéricos
+    this.value = this.value.replace(/[^0-9]/g, '');
+
+    // Limitar a 11 caracteres
+    if (this.value.length > 11) {
+        this.value = this.value.slice(0, 11);
+    }
+
+    // Actualizar contador
+    const length = this.value.length;
+    const counter = document.getElementById('trainer-cedula-count');
+    const warning = document.getElementById('trainer-cedula-warning');
+
+    counter.textContent = `${length} / 11`;
+
+    // Cambiar color si se acerca al límite
+    counter.style.color = length >= 10 ? 'red' : '';
+
+    // Mostrar advertencia al llegar a 11
+    warning.style.display = length === 11 ? 'inline' : 'none';
+});
+
+document.getElementById('trainer-name').addEventListener('input', function () {
+    const value = this.value;
+    const length = value.length;
+    const counter = document.getElementById('trainer-name-count');
+    const warning = document.getElementById('trainer-name-warning');
+
+    counter.textContent = `${length} / 50`;
+
+    // Color rojo si se acerca al límite
+    counter.style.color = length >= 45 ? 'red' : '';
+
+    // Mostrar advertencia si llega al máximo
+    warning.style.display = length === 50 ? 'inline' : 'none';
+});
+
+document.getElementById('trainer-email').addEventListener('input', function () {
+    const value = this.value;
+    const length = value.length;
+    const counter = document.getElementById('trainer-email-count');
+    const warning = document.getElementById('trainer-email-warning');
+
+    counter.textContent = `${length} / 75`;
+
+    // Color rojo si se acerca al límite
+    counter.style.color = length >= 70 ? 'red' : '';
+
+    // Mostrar advertencia si llega al máximo
+    warning.style.display = length === 75 ? 'inline' : 'none';
+});
+
+document.getElementById('trainer-phone').addEventListener('input', function () {
+    // Solo permitir números
+    this.value = this.value.replace(/[^0-9]/g, '');
+
+    const length = this.value.length;
+    const counter = document.getElementById('trainer-phone-count');
+    const warning = document.getElementById('trainer-phone-warning');
+
+    counter.textContent = `${length} / 10`;
+
+    // Color rojo si se acerca al límite
+    counter.style.color = length >= 9 ? 'red' : '';
+
+    // Mostrar advertencia si llega al máximo
+    warning.style.display = length === 10 ? 'inline' : 'none';
+});
+
+document.getElementById('client-phone').addEventListener('input', function () {
+    // Solo permitir números
+    this.value = this.value.replace(/[^0-9]/g, '');
+
+    const length = this.value.length;
+    const counter = document.getElementById('client-phone-count');
+    const warning = document.getElementById('client-phone-warning');
+
+    counter.textContent = `${length} / 10`;
+
+    // Color rojo si se acerca al límite
+    counter.style.color = length >= 9 ? 'red' : '';
+
+    // Mostrar advertencia si llega al máximo
+    warning.style.display = length === 10 ? 'inline' : 'none';
+});
+
+document.getElementById('trainer-schedule').addEventListener('input', function () {
+    const value = this.value;
+    const length = value.length;
+    const counter = document.getElementById('trainer-schedule-count');
+    const warning = document.getElementById('trainer-schedule-warning');
+
+    counter.textContent = `${length} / 50`;
+
+    // Color rojo si se acerca al límite
+    counter.style.color = length >= 45 ? 'red' : '';
+
+    // Mostrar advertencia si llega al máximo
+    warning.style.display = length === 50 ? 'inline' : 'none';
+});
 
     </script>
 </body>

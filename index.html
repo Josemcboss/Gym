@@ -477,7 +477,7 @@
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>Cédula</th>
+                                        <th>ID Cliente</th>
                                         <th>Nombre</th>
                                         <th>Tipo de membresía</th>
                                         <th>Fecha de inicio</th>
@@ -511,7 +511,7 @@
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>Cédula</th>
+                                        <th>ID</th>
                                         <th>Nombre</th>
                                         <th>Especialidad</th>
                                         <th>Sesiones Totales</th>
@@ -542,17 +542,13 @@
             <form id="client-form">
                 <div class="form-group">
                     <label class="form-label" for="client-cedula">Cédula</label>
-                    <input type="text" class="form-control" id="client-cedula" required maxlength="11">
-                    <small id="client-cedula-count" class="text-muted">0 / 11</small>
-                    <small id="client-cedula-warning" class="text-danger" style="display: none;">Máximo 11 caracteres permitidos.</small>
+                    <input type="text" class="form-control" id="client-cedula" maxlength="11" pattern="[0-9]*" required placeholder="Solo números">
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="client-phone">Teléfono</label>
                     <input type="tel" class="form-control" id="client-phone" 
                            maxlength="10" pattern="[0-9]*" required 
                            placeholder="Solo números">
-                           <small id="client-phone-count" class="text-muted">0 / 10</small>
-                           <small id="client-phone-warning" class="text-danger" style="display: none;">Máximo 10 números permitidos.</small>
                 </div>          
                 <div class="form-group">
                     <label class="form-label" for="client-name">Nombre</label>
@@ -765,16 +761,8 @@
             <form id="trainer-form">
                 <input type="hidden" id="trainer-id">
                 <div class="form-group">
-                    <label class="form-label" for="trainer-cedula">Cédula</label>
-                    <input type="text" class="form-control" id="trainer-cedula" required maxlength="11">
-                    <small id="trainer-cedula-count" class="text-muted">0 / 11</small>
-                    <small id="trainer-cedula-warning" class="text-danger" style="display: none;">Máximo 11 caracteres permitidos.</small>
-                  </div>                                    
-                <div class="form-group">
                     <label class="form-label" for="trainer-name">Nombre</label>
-                    <input type="text" class="form-control" id="trainer-name" pattern="[A-Za-záéíóúÁÉÍÓÚñÑ\s]+" maxlength="50" required>
-                    <small id="trainer-name-count" class="text-muted">0 / 50</small>
-                    <small id="trainer-name-warning" class="text-danger" style="display: none;">Máximo 50 caracteres permitidos.</small>
+                    <input type="text" class="form-control" id="trainer-name" pattern="[A-Za-záéíóúÁÉÍÓÚñÑ\s]+" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-specialty">Especialidad</label>
@@ -787,24 +775,17 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-email">Correo electrónico</label>
-                    <input type="email" class="form-control" id="trainer-email" maxlength="75" required>
-                    <small id="trainer-email-count" class="text-muted">0 / 75</small>
-                    <small id="trainer-email-warning" class="text-danger" style="display: none;">Máximo 75 caracteres permitidos.</small>
+                    <input type="email" class="form-control" id="trainer-email" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-phone">Teléfono</label>
                     <input type="tel" class="form-control" id="trainer-phone" 
                            maxlength="10" pattern="[0-9]*" required 
                            placeholder="Solo números">
-                           <small id="trainer-phone-count" class="text-muted">0 / 10</small>
-                           <small id="trainer-phone-warning" class="text-danger" style="display: none;">Máximo 10 números permitidos.</small>
-
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-schedule">Horario</label>
-                    <input type="text" class="form-control" id="trainer-schedule" placeholder="Ej: Lunes a Viernes, 8am - 4pm" maxlength="50" required>
-                    <small id="trainer-schedule-count" class="text-muted">0 / 50</small>
-                    <small id="trainer-schedule-warning" class="text-danger" style="display: none;">Máximo 50 caracteres permitidos.</small>
+                    <input type="text" class="form-control" id="trainer-schedule" placeholder="Ej: Lunes a Viernes, 8am - 4pm">
                 </div>
                 <div class="form-group">
                     <button type="submit" class="btn btn-primary">Guardar</button>
@@ -845,7 +826,7 @@
                     </div>
                 </div>
                 <div class="tab-content" id="client-attendance">
-                    <table class="table">
+                    <table>
                         <thead>
                             <tr>
                                 <th>Cedula</th>
@@ -866,7 +847,6 @@
                                 <th>Cedula</th>
                                 <th>Fecha</th>
                                 <th>Membresía</th>
-                                <th>Método</th>
                                 <th>Monto</th>
                                 <th>Estado</th>
                             </tr>
@@ -1043,25 +1023,25 @@ function saveGymData(data) {
 
         // Calculate membership end date
         function calculateEndDate(startDate, duration) {
-            const date = new Date(startDate);
-            
-            switch(duration) {
-                case 'mensual':
-                    date.setMonth(date.getMonth() + 1);
-                    break;
-                case 'trimestral':
-                    date.setMonth(date.getMonth() + 3);
-                    break;
-                case 'semestral':
-                    date.setMonth(date.getMonth() + 6);
-                    break;
-                case 'anual':
-                    date.setFullYear(date.getFullYear() + 1);
-                    break;
-            }
-            
-            return date.toISOString().split('T')[0];
-        }
+    const date = new Date(startDate + 'T00:00:00');
+    
+    switch(duration) {
+        case 'mensual':
+            date.setMonth(date.getMonth() + 1);
+            break;
+        case 'trimestral':
+            date.setMonth(date.getMonth() + 3);
+            break;
+        case 'semestral':
+            date.setMonth(date.getMonth() + 6);
+            break;
+        case 'anual':
+            date.setFullYear(date.getFullYear() + 1);
+            break;
+    }
+    
+    return date.toISOString().split('T')[0];
+}
 
         // Check if a membership is active
         function isMembershipActive(startDate, duration) {
@@ -1072,7 +1052,11 @@ function saveGymData(data) {
         // Get client by ID
         function getClientByCedula(cedula) {
     const data = getGymData();
-    
+    if (!cedula && cedula !== 0) return null;
+    return data.clients.find(client => 
+        client.cedula.toString() === cedula.toString()
+    );
+}
     if (!cedula && cedula !== 0) return null;
 
     // Asegúrate de que la cédula se compara correctamente (puede ser string vs number)
@@ -1209,7 +1193,6 @@ document.getElementById('payment-client').addEventListener('change', function ()
     if (this.value.length > 11) {
         this.value = this.value.slice(0, 11);
     }
-
 });
 
         // Load data into trainer select
@@ -1408,7 +1391,7 @@ function loadPaymentsTable() {
         data.trainers.forEach(trainer => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${trainer.cedula}</td>
+                <td>${trainer.id}</td>
                 <td>${trainer.name}</td>
                 <td>${trainer.specialty}</td>
                 <td>${trainer.email}</td>
@@ -1460,78 +1443,33 @@ function loadPaymentsTable() {
         const paymentsTable = document.getElementById('client-payments-table');
         paymentsTable.innerHTML = '';
 
-        const clientId = client.cedula;
-
-        // Cargar asistencias del cliente
-        const attendanceTable = document.getElementById('client-attendance-table');
-attendanceTable.innerHTML = '';
-
-const clientAttendance = data.attendance
-    .filter(a => a.client_cedula === clientId)
-    .sort((a, b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time));
-
-if (clientAttendance.length === 0) {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-        <td colspan="4" class="text-center text-muted">Sin asistencias registradas</td>
-    `;
-    attendanceTable.appendChild(row);
-} else {
-    clientAttendance.forEach(att => {
-        const trainer = att.trainer_id ? getTrainerById(att.trainer_id) : null;
-
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${att.client_cedula}</td>
-            <td>${formatDateTime(att.date, att.time)}</td>
-            <td>${trainer ? trainer.name : 'Sin entrenador'}</td>
-            <td>
-                <span class="badge ${att.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
-                    ${att.status}
-                </span>
-            </td>
-        `;
-        attendanceTable.appendChild(row);
-    });
-}
-
         // 🔴 **Corrección aplicada**: Definir `clientId` correctamente
-         
-        const clientPayments = data.payments
-  .filter(p => p.client_cedula === clientId)
-  .sort((a, b) => new Date(b.date) - new Date(a.date));
+        const clientId = client.cedula; 
 
-if (clientPayments.length === 0) {
-  const row = document.createElement('tr');
-  row.innerHTML = `
-    <td colspan="5" class="text-center text-muted">Sin pagos registrados</td>
-  `;
-  paymentsTable.appendChild(row);
-} else {
-  clientPayments.forEach(payment => {
-    const membership = getMembershipById(payment.membership_id);
-    const finalAmount = payment.amount * (1 - payment.discount / 100);
-
-    const row = document.createElement('tr');
-    row.innerHTML = `
-  <td>${payment.client_cedula}</td>
-  <td>${formatDate(payment.date)}</td>
-  <td>${membership ? membership.name : 'Membresía eliminada'}</td>
-  <td>${payment.method}</td> <!-- ✅ nuevo -->
-  <td>$${finalAmount.toFixed(2)}</td>
-  <td>
-    <span class="badge ${
-      payment.status === 'Pagado' ? 'badge-success' :
-      payment.status === 'Pendiente' ? 'badge-warning' : 'badge-danger'
-    }">
-      ${payment.status}
-    </span>
-  </td>
-`;
-
-    paymentsTable.appendChild(row);
-  });
-}
+        data.payments
+            .filter(p => p.client_id === clientId) // Aquí `clientId` ya está definido correctamente
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .forEach(payment => {
+                const membership = getMembershipById(payment.membership_id);
+                const finalAmount = payment.amount * (1 - payment.discount / 100);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${payment.id}</td>
+                    <td>${formatDate(payment.date)}</td>
+                    <td>${membership ? membership.name : 'Membresía eliminada'}</td>
+                    <td>$${finalAmount.toFixed(2)}</td>
+                    <td>
+                        <span class="badge ${
+                            payment.status === 'Pagado' ? 'badge-success' : 
+                            payment.status === 'Pendiente' ? 'badge-warning' : 'badge-danger'
+                        }">
+                            ${payment.status}
+                        </span>
+                    </td>
+                `;
+                paymentsTable.appendChild(row);
+            });
 
         // Mostrar modal
         openModal('client-view-modal');
@@ -1799,7 +1737,9 @@ document.getElementById('payment-form').addEventListener('submit', function (e) 
         let filteredAttendance = data.attendance;
         
         if (clientId) {
-            filteredAttendance = data.attendance.filter(a => a.client_cedula === parseInt(cedula));
+            filteredAttendance = data.attendance.filter(a => 
+        a.client_cedula.toString() === cedula.toString()
+        );
         }
         
         // Sort by date (newest first)
@@ -2095,7 +2035,7 @@ function getLastAttendance(cedula) {
         // Create table row
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${trainer.cedula}</td>
+            <td>${trainer.id}</td>
             <td>${trainer.name}</td>
             <td>${trainer.specialty}</td>
             <td>${trainerSessions.length}</td>
@@ -2185,13 +2125,21 @@ function formatDateTime(dateString, timeString) {
 
 // Calcula la fecha de finalización de una membresía
 function calculateEndDate(startDate, duration) {
-    const date = new Date(startDate);
+    const date = new Date(startDate + 'T00:00:00');
     
     switch(duration) {
-        case 'mensual': date.setMonth(date.getMonth() + 1); break;
-        case 'trimestral': date.setMonth(date.getMonth() + 3); break;
-        case 'semestral': date.setMonth(date.getMonth() + 6); break;
-        case 'anual': date.setFullYear(date.getFullYear() + 1); break;
+        case 'mensual':
+            date.setMonth(date.getMonth() + 1);
+            break;
+        case 'trimestral':
+            date.setMonth(date.getMonth() + 3);
+            break;
+        case 'semestral':
+            date.setMonth(date.getMonth() + 6);
+            break;
+        case 'anual':
+            date.setFullYear(date.getFullYear() + 1);
+            break;
     }
     
     return date.toISOString().split('T')[0];
@@ -2206,7 +2154,10 @@ function isMembershipActive(startDate, duration) {
 // Obtiene un cliente por su cédula
 function getClientByCedula(cedula) {
     const data = getGymData();
-    return data.clients.find(client => client.cedula === cedula);
+    if (!cedula && cedula !== 0) return null;
+    return data.clients.find(client => 
+        client.cedula.toString() === cedula.toString()
+    );
 }
 
 // Obtiene una membresía por su ID
@@ -2949,27 +2900,14 @@ document.getElementById('search-client').addEventListener('input', searchClients
 document.getElementById('search-client-cedula').addEventListener('input', searchClients);
 
 // Agregar validación para el campo de cédula
-document.getElementById('client-cedula').addEventListener('input', function () {
-    // Limpiar caracteres no numéricos
+document.getElementById('search-client-cedula').addEventListener('input', function(e) {
+    // Eliminar caracteres no numéricos
     this.value = this.value.replace(/[^0-9]/g, '');
-
+    
     // Limitar a 11 caracteres
     if (this.value.length > 11) {
         this.value = this.value.slice(0, 11);
     }
-
-    // Actualizar contador
-    const length = this.value.length;
-    const counter = document.getElementById('client-cedula-count');
-    const warning = document.getElementById('client-cedula-warning');
-
-    counter.textContent = `${length} / 11`;
-
-    // Cambiar color si se acerca al límite
-    counter.style.color = length >= 10 ? 'red' : '';
-
-    // Mostrar advertencia al llegar a 11
-    warning.style.display = length === 11 ? 'inline' : 'none';
 });
 
 document.getElementById('client-phone').addEventListener('input', function(e) {
@@ -2996,7 +2934,6 @@ document.getElementById('client-name').addEventListener('input', function () {
     }
 
     warning.style.display = length === 50 ? 'inline' : 'none';
-
 });
 
 // Email - contador con advertencia
@@ -3013,125 +2950,24 @@ document.getElementById('client-email').addEventListener('input', function () {
     }
 
     warning.style.display = length === 75 ? 'inline' : 'none';
-
 });
 
-// Controlador de pestañas dentro del modal de cliente
-document.querySelectorAll('#client-view-modal .tab-btn').forEach(button => {
-        button.addEventListener('click', function () {
-            const tab = this.getAttribute('data-tab');
-
-            // Quitar la clase 'active' a todos los botones y contenidos
-            document.querySelectorAll('#client-view-modal .tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('#client-view-modal .tab-content').forEach(content => content.classList.remove('active'));
-
-            // Agregar la clase 'active' al botón y contenido seleccionado
-            this.classList.add('active');
-            document.getElementById(tab).classList.add('active');
+    </script>ventListener('DOMContentLoaded', function() {
+</body>Eventos para validación de nombres
+    const clientNameInput = document.getElementById('client-name');
+    const trainerNameInput = document.getElementById('trainer-name');
+    
+    if (clientNameInput) {
+        clientNameInput.addEventListener('input', function(e) {
+            this.value = this.value.replace(/[0-9]/g, '');
         });
-    });
-
-    document.getElementById('trainer-cedula').addEventListener('input', function () {
-    // Limpiar caracteres no numéricos
-    this.value = this.value.replace(/[^0-9]/g, '');
-
-    // Limitar a 11 caracteres
-    if (this.value.length > 11) {
-        this.value = this.value.slice(0, 11);
     }
-
-    // Actualizar contador
-    const length = this.value.length;
-    const counter = document.getElementById('trainer-cedula-count');
-    const warning = document.getElementById('trainer-cedula-warning');
-
-    counter.textContent = `${length} / 11`;
-
-    // Cambiar color si se acerca al límite
-    counter.style.color = length >= 10 ? 'red' : '';
-
-    // Mostrar advertencia al llegar a 11
-    warning.style.display = length === 11 ? 'inline' : 'none';
+    
+    if (trainerNameInput) {
+        trainerNameInput.addEventListener('input', function(e) {
+            this.value = this.value.replace(/[0-9]/g, '');
+        });
+    }
 });
-
-document.getElementById('trainer-name').addEventListener('input', function () {
-    const value = this.value;
-    const length = value.length;
-    const counter = document.getElementById('trainer-name-count');
-    const warning = document.getElementById('trainer-name-warning');
-
-    counter.textContent = `${length} / 50`;
-
-    // Color rojo si se acerca al límite
-    counter.style.color = length >= 45 ? 'red' : '';
-
-    // Mostrar advertencia si llega al máximo
-    warning.style.display = length === 50 ? 'inline' : 'none';
-});
-
-document.getElementById('trainer-email').addEventListener('input', function () {
-    const value = this.value;
-    const length = value.length;
-    const counter = document.getElementById('trainer-email-count');
-    const warning = document.getElementById('trainer-email-warning');
-
-    counter.textContent = `${length} / 75`;
-
-    // Color rojo si se acerca al límite
-    counter.style.color = length >= 70 ? 'red' : '';
-
-    // Mostrar advertencia si llega al máximo
-    warning.style.display = length === 75 ? 'inline' : 'none';
-});
-
-document.getElementById('trainer-phone').addEventListener('input', function () {
-    // Solo permitir números
-    this.value = this.value.replace(/[^0-9]/g, '');
-
-    const length = this.value.length;
-    const counter = document.getElementById('trainer-phone-count');
-    const warning = document.getElementById('trainer-phone-warning');
-
-    counter.textContent = `${length} / 10`;
-
-    // Color rojo si se acerca al límite
-    counter.style.color = length >= 9 ? 'red' : '';
-
-    // Mostrar advertencia si llega al máximo
-    warning.style.display = length === 10 ? 'inline' : 'none';
-});
-
-document.getElementById('client-phone').addEventListener('input', function () {
-    // Solo permitir números
-    this.value = this.value.replace(/[^0-9]/g, '');
-
-    const length = this.value.length;
-    const counter = document.getElementById('client-phone-count');
-    const warning = document.getElementById('client-phone-warning');
-
-    counter.textContent = `${length} / 10`;
-
-    // Color rojo si se acerca al límite
-    counter.style.color = length >= 9 ? 'red' : '';
-
-    // Mostrar advertencia si llega al máximo
-    warning.style.display = length === 10 ? 'inline' : 'none';
-});
-
-document.getElementById('trainer-schedule').addEventListener('input', function () {
-    const value = this.value;
-    const length = value.length;
-    const counter = document.getElementById('trainer-schedule-count');
-    const warning = document.getElementById('trainer-schedule-warning');
-
-    counter.textContent = `${length} / 50`;
-
-    // Color rojo si se acerca al límite
-    counter.style.color = length >= 45 ? 'red' : '';
-
-    // Mostrar advertencia si llega al máximo
-    warning.style.display = length === 50 ? 'inline' : 'none';
-});
-
     </script>
 </body>

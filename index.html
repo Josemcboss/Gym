@@ -1023,7 +1023,13 @@ function saveGymData(data) {
         // Get client by ID
         function getClientByCedula(cedula) {
     const data = getGymData();
-    return data.clients.find(client => client.cedula === cedula);
+    return data.clients.find(client => 
+        client && client.cedula && client.cedula.toString() === cedula.toString()
+    ) || null;
+}
+
+    // Asegúrate de que la cédula se compara correctamente (puede ser string vs number)
+    return data.clients.find(client => client.cedula.toString() === cedula.toString());
 }
         // Get membership by ID
         function getMembershipById(id) {
@@ -1050,7 +1056,18 @@ function saveGymData(data) {
                 selectElement.appendChild(option);
             });
         }
-
+        function loadPaymentMembershipSelect() {
+    const data = getGymData();
+    const selectElement = document.getElementById('payment-membership');
+    selectElement.innerHTML = '<option value="">Seleccionar membresía</option>';
+    
+    data.memberships.forEach(membership => {
+        const option = document.createElement('option');
+        option.value = membership.id;
+        option.textContent = `${membership.name} ($${membership.price})`;
+        selectElement.appendChild(option);
+    });
+}
         // Load data into payment membership select
         function loadPaymentMembershipSelect() {
             const data = getGymData();
@@ -1263,47 +1280,57 @@ function saveGymData(data) {
             });
         }
 
-        // Load payments table
-        function loadPaymentsTable() {
-            const data = getGymData();
-            const tableBody = document.getElementById('payments-table');
-            tableBody.innerHTML = '';
-            
-            // Sort by date (newest first)
-            const sortedPayments = [...data.payments].sort((a, b) => {
-                return new Date(b.date) - new Date(a.date);
-            });
-            
-            sortedPayments.forEach(payment => {
-                const client = getClientByCedula(payment.client_cedula);
-                const membership = getMembershipById(payment.membership_id);
-                const finalAmount = payment.amount * (1 - payment.discount / 100);
-                
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${payment.id}</td>
-                    <td>${client ? client.name : 'Cliente eliminado'}</td>
-                    <td>${membership ? membership.name : 'Membresía eliminada'}</td>
-                    <td>$${finalAmount.toFixed(2)}</td>
-                    <td>${payment.method}</td>
-                    <td>
-                        <span class="badge ${
-                            payment.status === 'Pagado' ? 'badge-success' : 
-                            payment.status === 'Pendiente' ? 'badge-warning' : 'badge-danger'
-                        }">
-                            ${payment.status}
-                        </span>
-                    </td>
-                    <td>${formatDate(payment.date)}</td>
-                    <td>
-                        <button class="btn btn-warning" onclick="editPayment(${payment.id})">Editar</button>
-                        <button class="btn btn-danger" onclick="deletePayment(${payment.id})">Eliminar</button>
-                    </td>
-                `;
-                tableBody.appendChild(row);
-            });
-        }
-
+// Función corregida para cargar la tabla de pagos
+function loadPaymentsTable() {
+    const data = getGymData();
+    const tableBody = document.getElementById('payments-table');
+    tableBody.innerHTML = '';
+    
+    // Ordenar pagos por fecha (más reciente primero)
+    const sortedPayments = [...data.payments].sort((a, b) => {
+        return new Date(b.date) - new Date(a.date);
+    });
+    
+    sortedPayments.forEach(payment => {
+        // Obtener cliente con manejo seguro
+        const client = payment.client_cedula ? getClientByCedula(payment.client_cedula) : null;
+        
+        // Obtener membresía con manejo seguro
+        function getMembershipById(id) {
+    const data = getGymData();
+    // Convertir ambos IDs a string para comparación segura
+    return data.memberships.find(membership => 
+        membership && membership.id && membership.id.toString() === id.toString()
+    ) || null;
+}
+        
+        // Calcular monto final con valor por defecto
+        const finalAmount = payment.amount ? payment.amount * (1 - (payment.discount || 0) / 100) : 0;
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${payment.client_cedula || 'N/A'}</td>
+            <td>${client ? client.name : 'Cliente no encontrado'}</td>
+            <td>${membership ? membership.name : 'Membresía no encontrada'}</td>
+            <td>$${finalAmount.toFixed(2)}</td>
+            <td>${payment.method || 'N/A'}</td>
+            <td>
+                <span class="badge ${
+                    payment.status === 'Pagado' ? 'badge-success' : 
+                    payment.status === 'Pendiente' ? 'badge-warning' : 'badge-danger'
+                }">
+                    ${payment.status || 'Desconocido'}
+                </span>
+            </td>
+            <td>${payment.date ? formatDate(payment.date) : 'N/A'}</td>
+            <td>
+                <button class="btn btn-warning" onclick="editPayment(${payment.id})">Editar</button>
+                <button class="btn btn-danger" onclick="deletePayment(${payment.id})">Eliminar</button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
 
     // Load trainers table
     function loadTrainersTable() {
@@ -1920,14 +1947,15 @@ function saveGymData(data) {
     });
 
     // Form submissions
-    // Client form
-    document.getElementById('client-form').addEventListener('submit', function(e) {
+ // Client form
+document.getElementById('client-form').addEventListener('submit', function(e) {
     e.preventDefault();
     
-    // Extraer el valor de la cédula
-    const cedula = document.getElementById('client-cedula').value.trim();
+    // Get the current data
+    const data = getGymData();
     
-    // Extraer los demás campos
+    // Extract form values
+    const cedula = document.getElementById('client-cedula').value.trim();
     const name = document.getElementById('client-name').value;
     const email = document.getElementById('client-email').value;
     const phone = document.getElementById('client-phone').value;
@@ -1936,7 +1964,7 @@ function saveGymData(data) {
     const membership_id = document.getElementById('client-membership').value;
     const start_date = document.getElementById('client-start-date').value;
 
-    // Crear el objeto cliente utilizando la cédula como clave primaria
+    // Create new client object
     const newClient = {
         cedula: cedula,
         name: name,
@@ -1948,32 +1976,29 @@ function saveGymData(data) {
         start_date: start_date
     };
     
-    data.clients.push(newClient);
+    // Check if we're editing an existing client or adding a new one
+    const existingIndex = data.clients.findIndex(c => c.cedula === cedula);
+    
+    if (existingIndex !== -1) {
+        // Update existing client
+        data.clients[existingIndex] = newClient;
+    } else {
+        // Add new client
+        data.clients.push(newClient);
+    }
+    
+    // Save the data
     saveGymData(data);
+    
+    // Refresh UI
     loadClientsTable();
-    // Opcional: cerrar el modal
+    loadClientSelect();
+    updateDashboardStats();
+    
+    // Close modal and reset form
     closeModal('client-modal');
-        
-        if (clientId) {
-            // Update existing client
-            client.id = parseInt(clientId);
-            const index = data.clients.findIndex(c => c.id === client.id);
-            if (index !== -1) {
-                data.clients[index] = client;
-            }
-        } else {
-            // Add new client
-            client.id = generateId('clients');
-            data.clients.push(client);
-        }
-        
-        saveGymData(data);
-        loadClientsTable();
-        loadClientSelect();
-        closeModal('client-modal');
-        this.reset();
-        document.getElementById('client-id').value = '';
-    });
+    this.reset();
+});
 
     // Membership form
     document.getElementById('membership-form').addEventListener('submit', function(event) {

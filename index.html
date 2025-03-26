@@ -541,23 +541,21 @@
             <form id="client-form">
                 <div class="form-group">
                     <label class="form-label" for="client-cedula">Cédula</label>
-                    <input type="text" class="form-control" id="client-cedula" maxlength="11" pattern="[0-9]*" required>
+                    <input type="text" class="form-control" id="client-cedula" maxlength="11" pattern="[0-9]*" required placeholder="Solo números">
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="client-phone">Teléfono</label>
-                    <input type="tel" class="form-control" id="client-phone" maxlength="10" pattern="[0-9]*" required>
-                </div>              
+                    <input type="tel" class="form-control" id="client-phone" 
+                           maxlength="10" pattern="[0-9]*" required 
+                           placeholder="Solo números">
+                </div>          
                 <div class="form-group">
                     <label class="form-label" for="client-name">Nombre</label>
-                    <input type="text" class="form-control" id="client-name" required>
+                    <input type="text" class="form-control" id="client-name" pattern="[A-Za-záéíóúÁÉÍÓÚñÑ\s]+" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="client-email">Correo electrónico</label>
                     <input type="email" class="form-control" id="client-email" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="client-phone">Teléfono</label>
-                    <input type="tel" class="form-control" id="client-phone" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="client-birthdate">Fecha de Nacimiento</label>
@@ -759,7 +757,7 @@
                 <input type="hidden" id="trainer-id">
                 <div class="form-group">
                     <label class="form-label" for="trainer-name">Nombre</label>
-                    <input type="text" class="form-control" id="trainer-name" required>
+                    <input type="text" class="form-control" id="trainer-name" pattern="[A-Za-záéíóúÁÉÍÓÚñÑ\s]+" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-specialty">Especialidad</label>
@@ -776,7 +774,9 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-phone">Teléfono</label>
-                    <input type="tel" class="form-control" id="trainer-phone" maxlength="10" pattern="[0-9]*" required>
+                    <input type="tel" class="form-control" id="trainer-phone" 
+                           maxlength="10" pattern="[0-9]*" required 
+                           placeholder="Solo números">
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-schedule">Horario</label>
@@ -2052,7 +2052,44 @@ function formatDate(dateString) {
     const date = new Date(dateString);
     return date.toLocaleDateString();
 }
+// Name validation for client form
+document.getElementById('client-name').addEventListener('input', function(e) {
+    // Remove any numeric characters
+    this.value = this.value.replace(/[0-9]/g, '');
+});
 
+// Name validation for trainer form
+document.getElementById('trainer-name').addEventListener('input', function(e) {
+    // Remove any numeric characters
+    this.value = this.value.replace(/[0-9]/g, '');
+});
+// Phone number validation
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all phone input fields
+    const phoneInputs = ['client-phone', 'trainer-phone'];
+    
+    phoneInputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('input', function(e) {
+                // Remove any non-numeric characters
+                this.value = this.value.replace(/\D/g, '');
+                
+                // Limit to 10 digits
+                if (this.value.length > 10) {
+                    this.value = this.value.slice(0, 10);
+                }
+            });
+
+            // Prevent key press of non-numeric characters
+            input.addEventListener('keypress', function(e) {
+                if (!/^\d*$/.test(e.key)) {
+                    e.preventDefault();
+                }
+            });
+        }
+    });
+});
 // Formatea fecha y hora (ej: "01/01/2023 10:30 AM")
 function formatDateTime(dateString, timeString) {
     if (!dateString) return 'N/A';

@@ -2134,32 +2134,7 @@ function saveGymData(data) {
         document.getElementById('trainer-id').value = '';
         });
     
-        // Attendance form
-        document.getElementById('attendance-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-            const data = getGymData();
-            const attendanceId = document.getElementById('attendance-id').value;
-            const attendance = {
-                id: attendanceId ? parseInt(attendanceId) : generateId('attendance'),
-                client_cedula: parseInt(document.getElementById('attendance-client').value),
-                date: document.getElementById('attendance-date').value,
-                time: document.getElementById('attendance-time').value,
-                trainer_id: document.getElementById('attendance-trainer').value ? parseInt(document.getElementById('attendance-trainer').value) : null,
-                status: document.getElementById('attendance-status').value
-            };
-    
-            if (attendanceId) {
-                const index = data.attendance.findIndex(a => a.id === parseInt(attendanceId));
-                data.attendance[index] = attendance;
-            } else {
-                data.attendance.push(attendance);
-            }
-    
-            saveGymData(data);
-            loadAttendanceTable();
-            closeModal('attendance-modal');
-        });
-    
+ 
         // Payment form
         document.getElementById('payment-form').addEventListener('submit', function(event) {
             event.preventDefault();

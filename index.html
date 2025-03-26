@@ -1623,7 +1623,7 @@ function loadPaymentsTable() {
             
             // Fill form with payment data
             document.getElementById('payment-id').value = payment.id;
-            document.getElementById('payment-client').value = payment.client_id;
+            document.getElementById('payment-client').value = payment.client_cedula;
             document.getElementById('payment-membership').value = payment.membership_id;
             document.getElementById('payment-amount').value = payment.amount;
             document.getElementById('payment-discount').value = payment.discount;
@@ -1631,6 +1631,13 @@ function loadPaymentsTable() {
             document.getElementById('payment-status').value = payment.status;
             document.getElementById('payment-date').value = payment.date;
             
+            const client = getClientByCedula(payment.client_cedula);
+            if (client) {
+    document.getElementById('payment-client-name').value = client.name;
+} else {
+    document.getElementById('payment-client-name').value = '';
+}
+
             // Show modal
             openModal('payment-modal');
         }
@@ -1645,6 +1652,56 @@ function loadPaymentsTable() {
             loadPaymentsTable();
         }
     }
+
+    // Guardar o actualizar pago
+document.getElementById('payment-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const data = getGymData();
+    const id = document.getElementById('payment-id').value;
+    const cedula = document.getElementById('payment-client').value;
+    const membershipId = parseInt(document.getElementById('payment-membership').value);
+    const amount = parseFloat(document.getElementById('payment-amount').value);
+    const discount = parseFloat(document.getElementById('payment-discount').value) || 0;
+    const method = document.getElementById('payment-method').value;
+    const status = document.getElementById('payment-status').value;
+    const date = document.getElementById('payment-date').value;
+
+    if (id) {
+        // 🔄 Editar pago existente
+        const index = data.payments.findIndex(p => p.id === parseInt(id));
+        if (index !== -1) {
+            data.payments[index] = {
+                ...data.payments[index],
+                client_cedula: cedula,
+                membership_id: membershipId,
+                amount,
+                discount,
+                method,
+                status,
+                date
+            };
+        }
+    } else {
+        // ➕ Crear nuevo pago
+        const newPayment = {
+            id: generateId('payments'),
+            client_cedula: cedula,
+            membership_id: membershipId,
+            amount,
+            discount,
+            method,
+            status,
+            date
+        };
+        data.payments.push(newPayment);
+    }
+
+    saveGymData(data);
+    loadPaymentsTable();
+    closeModal('payment-modal');
+    this.reset(); // Limpia el formulario
+});
 
     // Filter attendance by client
     function filterAttendanceByClient(clientId) {

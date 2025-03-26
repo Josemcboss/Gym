@@ -2120,31 +2120,63 @@ document.getElementById('client-form').addEventListener('submit', function(e) {
  
         // Payment form
         document.getElementById('payment-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-            const data = getGymData();
-            const paymentId = document.getElementById('payment-id').value;
-            const payment = {
-                id: paymentId ? parseInt(paymentId) : generateId('payments'),
-                client_id: parseInt(document.getElementById('payment-client').value),
-                membership_id: parseInt(document.getElementById('payment-membership').value),
-                amount: parseFloat(document.getElementById('payment-amount').value),
-                discount: parseFloat(document.getElementById('payment-discount').value),
-                method: document.getElementById('payment-method').value,
-                status: document.getElementById('payment-status').value,
-                date: document.getElementById('payment-date').value
-            };
+    event.preventDefault();
+    const data = getGymData();
+
+    // Validar campos obligatorios
+    const clientId = document.getElementById('payment-client').value;
+    const membershipId = document.getElementById('payment-membership').value;
+    const amount = document.getElementById('payment-amount').value;
+    const date = document.getElementById('payment-date').value;
+
+    if (!clientId || !membershipId || !amount || !date) {
+        alert('Por favor complete todos los campos obligatorios');
+        return;
+    }
+
+    // Validar que exista el cliente
+    const client = getClientByCedula(clientId);
+    if (!client) {
+        alert('El cliente seleccionado no existe');
+        return;
+    }
+
+    // Validar que exista la membresía
+    const membership = getMembershipById(membershipId);
+    if (!membership) {
+        alert('La membresía seleccionada no existe');
+        return;
+    }
+
+    // Crear objeto de pago
+    const payment = {
+        id: generateId('payments'),
+        client_cedula: clientId,
+        membership_id: parseInt(membershipId),
+        amount: parseFloat(amount),
+        discount: parseFloat(document.getElementById('payment-discount').value) || 0,
+        method: document.getElementById('payment-method').value,
+        status: document.getElementById('payment-status').value,
+        date: date
+    };
+
+    // Validar descuento
+    if (payment.discount < 0 || payment.discount > 100) {
+        alert('El descuento debe estar entre 0 y 100%');
+        return;
+    }
+
+    data.payments.push(payment);
+    saveGymData(data);
+
+    // Actualizar UI
+    loadPaymentsTable();
+    updateDashboardStats();
     
-            if (paymentId) {
-                const index = data.payments.findIndex(p => p.id === parseInt(paymentId));
-                data.payments[index] = payment;
-            } else {
-                data.payments.push(payment);
-            }
-    
-            saveGymData(data);
-            loadPaymentsTable();
-            closeModal('payment-modal');
-        });
+    // Cerrar modal y resetear formulario
+    closeModal('payment-modal');
+    this.reset();
+});
     
  
         // Close modal when clicking on X or outside the modal

@@ -986,26 +986,29 @@ function saveGymData(data) {
 
         // Calculate membership end date
         function calculateEndDate(startDate, duration) {
-            const date = new Date(startDate);
-            
-            switch(duration) {
-                case 'mensual':
-                    date.setMonth(date.getMonth() + 1);
-                    break;
-                case 'trimestral':
-                    date.setMonth(date.getMonth() + 3);
-                    break;
-                case 'semestral':
-                    date.setMonth(date.getMonth() + 6);
-                    break;
-                case 'anual':
-                    date.setFullYear(date.getFullYear() + 1);
-                    break;
-            }
-            
-            return date.toISOString().split('T')[0];
-        }
-
+    if (!startDate || !duration) return null;
+    
+    const date = new Date(startDate);
+    
+    switch(duration) {
+        case 'mensual':
+            date.setMonth(date.getMonth() + 1);
+            break;
+        case 'trimestral':
+            date.setMonth(date.getMonth() + 3);
+            break;
+        case 'semestral':
+            date.setMonth(date.getMonth() + 6);
+            break;
+        case 'anual':
+            date.setFullYear(date.getFullYear() + 1);
+            break;
+        default:
+            return null;
+    }
+    
+    return date.toISOString().split('T')[0];
+}
         // Check if a membership is active
         function isMembershipActive(startDate, duration) {
             const endDate = new Date(calculateEndDate(startDate, duration));
@@ -1015,15 +1018,22 @@ function saveGymData(data) {
         // Get client by ID
         function getClientByCedula(cedula) {
     const data = getGymData();
-    // Asegúrate de que la cédula se compara correctamente (puede ser string vs number)
-    return data.clients.find(client => client.cedula.toString() === cedula.toString());
+    // Verificar si cedula es válida
+    if (!cedula && cedula !== 0) {
+        console.warn('Cédula no proporcionada o inválida');
+        return null;
+    }
+    const client = data.clients.find(client => {
+        // Verificar que el cliente y su cédula existan
+        return client && client.cedula && client.cedula.toString() === cedula.toString();
+    });
+    
+    if (!client) {
+        console.warn(`Cliente con cédula ${cedula} no encontrado`);
+    }
+    
+    return client || null;
 }
-        // Get membership by ID
-        function getMembershipById(id) {
-            const data = getGymData();
-            return data.memberships.find(membership => membership.id === parseInt(id));
-        }
-
         // Get trainer by ID
         function getTrainerById(id) {
             const data = getGymData();
@@ -1045,11 +1055,15 @@ function saveGymData(data) {
         }
 
         // Load data into payment membership select
-        function loadPaymentMembershipSelect() {
-            const data = getGymData();
-            const selectElement = document.getElementById('payment-membership');
-            selectElement.innerHTML = '<option value="">Seleccionar membresía</option>';
-            
+        function loadPaymentsTable() {
+        const data = getGymData();
+        const tableBody = document.getElementById('payments-table');
+        tableBody.innerHTML = '';
+    
+    // Ordenar pagos por fecha (más reciente primero)
+         const sortedPayments = [...data.payments].sort((a, b) => {
+        return new Date(b.date) - new Date(a.date);
+    });
             data.memberships.forEach(membership => {
                 const option = document.createElement('option');
                 option.value = membership.id;
@@ -1165,37 +1179,42 @@ function saveGymData(data) {
 
         // Load clients table
         function loadClientsTable() {
-            const data = getGymData();
-            const tableBody = document.getElementById('clients-table');
-            tableBody.innerHTML = '';
-            
-            data.clients.forEach(client => {
-                const membership = getMembershipById(client.membership_id);
-                const endDate = calculateEndDate(client.start_date, membership.duration);
-                const isActive = isMembershipActive(client.start_date, membership.duration);
-                
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${client.cedula}</td>
-                    <td>${client.name}</td>
-                    <td>${client.email}</td>
-                    <td>${client.phone}</td>
-                    <td>${membership.name}</td>
-                    <td>
-                        <span class="badge ${isActive ? 'badge-success' : 'badge-danger'}">
-                            ${isActive ? 'Activo' : 'Inactivo'}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-primary" onclick="viewClient('${client.cedula}')">Ver</button>
-                        <button class="btn btn-warning" onclick="editClient('${client.cedula}')">Editar</button>
-                        <button class="btn btn-danger" onclick="deleteClient('${client.cedula}')">Eliminar</button>
-                    </td>
-                `;
-                tableBody.appendChild(row);
-            });
-        }
-
+    const data = getGymData();
+    const tableBody = document.getElementById('clients-table');
+    tableBody.innerHTML = '';
+    
+    data.clients.forEach(client => {
+        // Verificar que el cliente y su membresía_id existan
+        const membership = client.membership_id ? getMembershipById(client.membership_id) : null;
+        
+        // Calcular fechas con manejo seguro
+        const startDate = client.start_date || null;
+        const endDate = membership && startDate ? 
+            calculateEndDate(startDate, membership.duration) : null;
+        const isActive = membership && startDate ? 
+            isMembershipActive(startDate, membership.duration) : false;
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${client.cedula || 'N/A'}</td>
+            <td>${client.name || 'Nombre no disponible'}</td>
+            <td>${client.email || 'N/A'}</td>
+            <td>${client.phone || 'N/A'}</td>
+            <td>${membership ? membership.name : 'Membresía no encontrada'}</td>
+            <td>
+                <span class="badge ${isActive ? 'badge-success' : 'badge-danger'}">
+                    ${isActive ? 'Activo' : 'Inactivo'}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-primary" onclick="viewClient('${client.cedula}')">Ver</button>
+                <button class="btn btn-warning" onclick="editClient('${client.cedula}')">Editar</button>
+                <button class="btn btn-danger" onclick="deleteClient('${client.cedula}')">Eliminar</button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
         // Load memberships table
         function loadMembershipsTable() {
             const data = getGymData();
@@ -1256,47 +1275,57 @@ function saveGymData(data) {
             });
         }
 
-        // Load payments table
-        function loadPaymentsTable() {
-            const data = getGymData();
-            const tableBody = document.getElementById('payments-table');
-            tableBody.innerHTML = '';
-            
-            // Sort by date (newest first)
-            const sortedPayments = [...data.payments].sort((a, b) => {
-                return new Date(b.date) - new Date(a.date);
-            });
-            
-            sortedPayments.forEach(payment => {
-                const client = getClientByCedula(payment.client_cedula);
-                const membership = getMembershipById(payment.membership_id);
-                const finalAmount = payment.amount * (1 - payment.discount / 100);
-                
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${payment.id}</td>
-                    <td>${client ? client.name : 'Cliente eliminado'}</td>
-                    <td>${membership ? membership.name : 'Membresía eliminada'}</td>
-                    <td>$${finalAmount.toFixed(2)}</td>
-                    <td>${payment.method}</td>
-                    <td>
-                        <span class="badge ${
-                            payment.status === 'Pagado' ? 'badge-success' : 
-                            payment.status === 'Pendiente' ? 'badge-warning' : 'badge-danger'
-                        }">
-                            ${payment.status}
-                        </span>
-                    </td>
-                    <td>${formatDate(payment.date)}</td>
-                    <td>
-                        <button class="btn btn-warning" onclick="editPayment(${payment.id})">Editar</button>
-                        <button class="btn btn-danger" onclick="deletePayment(${payment.id})">Eliminar</button>
-                    </td>
-                `;
-                tableBody.appendChild(row);
-            });
-        }
-
+// Función corregida para cargar la tabla de pagos
+function loadPaymentsTable() {
+    const data = getGymData();
+    const tableBody = document.getElementById('payments-table');
+    tableBody.innerHTML = '';
+    
+    // Ordenar pagos por fecha (más reciente primero)
+    const sortedPayments = [...data.payments].sort((a, b) => {
+        return new Date(b.date) - new Date(a.date);
+    });
+    
+    sortedPayments.forEach(payment => {
+        // Obtener cliente con manejo seguro
+        const client = payment.client_cedula ? getClientByCedula(payment.client_cedula) : null;
+        
+        // Obtener membresía con manejo seguro
+        function getMembershipById(id) {
+    const data = getGymData();
+    // Convertir ambos IDs a string para comparación segura
+    return data.memberships.find(membership => 
+        membership && membership.id && membership.id.toString() === id.toString()
+    ) || null;
+}
+        
+        // Calcular monto final con valor por defecto
+        const finalAmount = payment.amount ? payment.amount * (1 - (payment.discount || 0) / 100) : 0;
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${payment.client_cedula || 'N/A'}</td>
+            <td>${client ? client.name : 'Cliente no encontrado'}</td>
+            <td>${membership ? membership.name : 'Membresía no encontrada'}</td>
+            <td>$${finalAmount.toFixed(2)}</td>
+            <td>${payment.method || 'N/A'}</td>
+            <td>
+                <span class="badge ${
+                    payment.status === 'Pagado' ? 'badge-success' : 
+                    payment.status === 'Pendiente' ? 'badge-warning' : 'badge-danger'
+                }">
+                    ${payment.status || 'Desconocido'}
+                </span>
+            </td>
+            <td>${payment.date ? formatDate(payment.date) : 'N/A'}</td>
+            <td>
+                <button class="btn btn-warning" onclick="editPayment(${payment.id})">Editar</button>
+                <button class="btn btn-danger" onclick="deletePayment(${payment.id})">Eliminar</button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
 
     // Load trainers table
     function loadTrainersTable() {

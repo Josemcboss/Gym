@@ -1578,7 +1578,7 @@ function saveGymData(data) {
         }
     }
 
-    // Filter attendance by client
+
 // Función corregida para filtrar asistencias por cliente
 function filterAttendanceByClient(cedula) {
     const data = getGymData();
@@ -1588,8 +1588,8 @@ function filterAttendanceByClient(cedula) {
     let filteredAttendance = data.attendance;
     
     if (cedula) {
-        // Filtrar por cédula exacta (sin parsear a número)
-        filteredAttendance = data.attendance.filter(a => a.client_cedula === cedula);
+        // Filtrar por cédula exacta (comparando como strings)
+        filteredAttendance = data.attendance.filter(a => a.client_cedula.toString() === cedula.toString());
     }
     
     // Ordenar por fecha (más reciente primero)
@@ -1624,7 +1624,7 @@ function filterAttendanceByClient(cedula) {
     });
 }
 
-// Función auxiliar para obtener cliente por cédula (asegúrate de que existe)
+// Función auxiliar para obtener cliente por cédula
 function getClientByCedula(cedula) {
     const data = getGymData();
     return data.clients.find(client => client.cedula.toString() === cedula.toString());

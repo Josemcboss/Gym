@@ -1036,10 +1036,8 @@ function saveGymData(data) {
         // Get client by ID
         function getClientByCedula(cedula) {
     const data = getGymData();
-    return data.clients.find(client => 
-        client && client.cedula && client.cedula.toString() === cedula.toString()
-    ) || null;
-
+    
+    if (!cedula && cedula !== 0) return null;
 
     // Asegúrate de que la cédula se compara correctamente (puede ser string vs number)
     return data.clients.find(client => client.cedula.toString() === cedula.toString());
@@ -1285,40 +1283,41 @@ document.getElementById('payment-client').addEventListener('change', function ()
 
         // Load attendance table
         function loadAttendanceTable() {
-            const data = getGymData();
-            const tableBody = document.getElementById('attendance-table');
-            tableBody.innerHTML = '';
-            
-            // Sort by date (newest first)
-            const sortedAttendance = [...data.attendance].sort((a, b) => {
-                const dateA = new Date(a.date + 'T' + a.time);
-                const dateB = new Date(b.date + 'T' + b.time);
-                return dateB - dateA;
-            });
-            
-            sortedAttendance.forEach(attendance => {
-                const client = getClientByCedula(attendance.client_cedula);
-                const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
-                
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${attendance.client_cedula}</td>
-                    <td>${client ? client.name : 'Cliente eliminado'}</td>
-                    <td>${formatDateTime(attendance.date, attendance.time)}</td>
-                    <td>${trainer ? trainer.name : 'Ninguno'}</td>
-                    <td>
-                        <span class="badge ${attendance.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
-                            ${attendance.status}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-warning" onclick="editAttendance(${attendance.id})">Editar</button>
-                        <button class="btn btn-danger" onclick="deleteAttendance(${attendance.id})">Eliminar</button>
-                    </td>
-                `;
-                tableBody.appendChild(row);
-            });
-        }
+    const data = getGymData();
+    const tableBody = document.getElementById('attendance-table');
+    tableBody.innerHTML = '';
+    
+    // Sort by date (newest first)
+    const sortedAttendance = [...data.attendance].sort((a, b) => {
+        const dateA = new Date(a.date + 'T' + a.time);
+        const dateB = new Date(b.date + 'T' + b.time);
+        return dateB - dateA;
+    });
+    
+    sortedAttendance.forEach(attendance => {
+        // Usar la función corregida getClientByCedula
+        const client = getClientByCedula(attendance.client_cedula);
+        const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${attendance.client_cedula}</td>
+            <td>${client ? client.name : 'Cliente no encontrado'}</td>
+            <td>${formatDateTime(attendance.date, attendance.time)}</td>
+            <td>${trainer ? trainer.name : 'Ninguno'}</td>
+            <td>
+                <span class="badge ${attendance.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
+                    ${attendance.status}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-warning" onclick="editAttendance(${attendance.id})">Editar</button>
+                <button class="btn btn-danger" onclick="deleteAttendance(${attendance.id})">Eliminar</button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
 
 // Función corregida para cargar la tabla de pagos
 function loadPaymentsTable() {

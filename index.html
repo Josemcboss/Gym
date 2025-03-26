@@ -1131,6 +1131,21 @@ function saveGymData(data) {
             });
         }
 
+        // Mostrar cédula y nombre del cliente seleccionado en el modal de pago
+document.getElementById('payment-client').addEventListener('change', function () {
+    const cedula = this.value;
+    const client = getClientByCedula(cedula);
+    
+    if (client) {
+        document.getElementById('payment-client-name').value = client.name;
+        // Si quieres mostrar también la cédula en un campo oculto o de solo lectura:
+        // document.getElementById('payment-client-cedula').value = client.cedula;
+    } else {
+        document.getElementById('payment-client-name').value = '';
+        // document.getElementById('payment-client-cedula').value = '';
+    }
+});
+
         document.getElementById('client-cedula').addEventListener('input', function(e) {
     // Elimina cualquier carácter que no sea número
     this.value = this.value.replace(/[^0-9]/g, '');

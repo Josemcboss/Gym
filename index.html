@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GymPro - Sistema de Gestión</title>
+    <title> - GymManagement</title>
     <link rel="stylesheet" href="styles.css">
+    <script defer src="scripts.js"></script>
         
 </head>
+
 <body>
     <div class="container">
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h2><span>GymPro</span></h2>
+                <h2><span>GymManagement</span></h2>
             </div>
             <ul class="nav-menu">
                 <li class="nav-item active" data-page="dashboard">
@@ -48,7 +50,7 @@
                     <div class="user-avatar">A</div>
                     <div>
                         <div>Administrador</div>
-                        <small>admin@gympro.com</small>
+                        <small>admin@GymManagement</small>
                     </div>
                 </div>
             </div>
@@ -523,10 +525,9 @@
             </div>
             <div id="client-form-alert" class="alert hidden"></div>
             <form id="client-form">
-                <input type="hidden" id="client-id">
                 <div class="form-group">
                     <label class="form-label" for="client-cedula">Cédula</label>
-                    <input type="text" class="form-control" id="client-cedula" required>
+                    <input type="text" class="form-control" id="client-cedula"  maxlength="11" required>
                 </div>                
                 <div class="form-group">
                     <label class="form-label" for="client-name">Nombre</label>
@@ -616,45 +617,41 @@
             <button class="modal-close" data-close="attendance-modal">&times;</button>
           </div>
           <div id="attendance-form-alert" class="alert hidden"></div>
-          
           <form id="attendance-form">
-            <!-- Seleccionar la cédula del cliente -->
+            <input type="hidden" id="attendance-id">
+            
+            <!-- Select de Cliente -->
             <div class="form-group">
-              <label class="form-label" for="attendance-client">Cliente (Cédula)</label>
+              <label class="form-label" for="attendance-client">cédula</label>
               <select class="form-control" id="attendance-client" required>
-                <option value="">Seleccionar cliente</option>
-                <!-- Aquí se cargan cédulas por JavaScript -->
+                <option value="">Seleccionar cédula</option>
+                <!-- Se cargarán los clientes aquí -->
               </select>
             </div>
-      
-            <!-- Campo para mostrar automáticamente el nombre del cliente -->
+            
+            <!-- Nuevo campo para mostrar el Nombre del Cliente (readonly) -->
             <div class="form-group">
               <label class="form-label" for="attendance-client-name">Nombre del Cliente</label>
               <input type="text" class="form-control" id="attendance-client-name" readonly>
             </div>
-      
-            <!-- Fecha -->
+            
+            <!-- Fecha y Hora -->
             <div class="form-group">
               <label class="form-label" for="attendance-date">Fecha</label>
               <input type="date" class="form-control" id="attendance-date" required>
             </div>
-      
-            <!-- Hora -->
             <div class="form-group">
               <label class="form-label" for="attendance-time">Hora</label>
               <input type="time" class="form-control" id="attendance-time" required>
             </div>
-      
-            <!-- Entrenador Asignado -->
+            <!-- Otros campos: Entrenador y Estado -->
             <div class="form-group">
               <label class="form-label" for="attendance-trainer">Entrenador Asignado</label>
               <select class="form-control" id="attendance-trainer">
                 <option value="">Ninguno</option>
-                <!-- Entrenadores si corresponde -->
+                <!-- Se cargarán los entrenadores aquí -->
               </select>
             </div>
-      
-            <!-- Estado -->
             <div class="form-group">
               <label class="form-label" for="attendance-status">Estado</label>
               <select class="form-control" id="attendance-status" required>
@@ -662,7 +659,6 @@
                 <option value="Cancelada">Cancelada</option>
               </select>
             </div>
-
             <div class="form-group">
               <button type="submit" class="btn btn-primary">Guardar</button>
             </div>
@@ -681,7 +677,7 @@
             <form id="payment-form">
                 <input type="hidden" id="payment-id">
                 <div class="form-group">
-                    <label class="form-label" for="payment-client">Cliente</label>
+                    <label class="form-label" for="payment-client">cliente</label>
                     <select class="form-control" id="payment-client" required>
                         <option value="">Seleccionar cliente</option>
                         <!-- Clients will be loaded here -->
@@ -745,7 +741,12 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-specialty">Especialidad</label>
-                    <input type="text" class="form-control" id="trainer-specialty" required>
+                    <select class="form-control" id="trainer-specialty" required>
+                        <option value="">Seleccionar especialidad</option>
+                        <option value="Cardio">Cardio</option>
+                        <option value="Zumba">Zumba</option>
+                        <option value="Pesas">Pesas</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-email">Correo electrónico</label>
@@ -753,7 +754,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-phone">Teléfono</label>
-                    <input type="tel" class="form-control" id="trainer-phone" required>
+                    <input type="tel" class="form-control" id="trainer-phone" maxlength="11" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-schedule">Horario</label>
@@ -782,7 +783,7 @@
                 <div class="tab-content active" id="client-details">
                     <div class="grid-2">
                         <div>
-                            <p><strong>ID:</strong> <span id="view-client-id"></span></p>
+                            <p><strong>Cedula:</strong> <span id="view-client-id"></span></p>
                             <p><strong>Nombre:</strong> <span id="view-client-name"></span></p>
                             <p><strong>Email:</strong> <span id="view-client-email"></span></p>
                             <p><strong>Teléfono:</strong> <span id="view-client-phone"></span></p>
@@ -801,7 +802,7 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Cédula</th>
+                                <th>Cedula</th>
                                 <th>Fecha y Hora</th>
                                 <th>Entrenador</th>
                                 <th>Estado</th>
@@ -816,7 +817,7 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>Cédula</th>
+                                <th>Cedula</th>
                                 <th>Fecha</th>
                                 <th>Membresía</th>
                                 <th>Monto</th>
@@ -834,6 +835,36 @@
 
     <script>
         // Initialize data storage
+// Initialize the application
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if local storage has data, otherwise initialize with demo data
+    if (!localStorage.getItem('gymData')) {
+        initializeLocalStorage(); //
+    }
+    // Load data into all tables and selects
+    loadClientsTable();
+    loadMembershipsTable();
+    loadAttendanceTable();
+    loadPaymentsTable();
+    loadTrainersTable();
+    
+    // Load all select elements
+    loadClientSelect();
+    loadClientMembershipSelect();
+    loadPaymentMembershipSelect();
+    loadTrainerSelect();
+    loadMembershipTypeSelect();
+    updateDashboardStats();
+    // Show dashboard tab by default
+    const dashboardTab = document.querySelector('.tab-btn[data-tab="dashboard"]');
+    if (dashboardTab) {
+        dashboardTab.click();
+    }
+    
+});
+
+
+        console.log("Probando si el script se ejecuta");
         function initializeLocalStorage() {
             // Check if we already have data in localStorage
             if (!localStorage.getItem('gymData')) {
@@ -891,11 +922,15 @@
 
         // Generate unique ID for different entities
         function generateId(entity) {
-            const data = getGymData();
-            data.counters[entity]++;
-            saveGymData(data);
-            return data.counters[entity];
+        const data = getGymData();
+        if (!data.counters[entity]) {
+        data.counters[entity] = 1; // Inicializa si no existe
+        } else {
+        data.counters[entity]++;
         }
+        saveGymData(data);
+        return data.counters[entity];
+}
 
         // Format date for display
         function formatDate(dateString) {
@@ -948,7 +983,6 @@
     const data = getGymData();
     return data.clients.find(client => client.cedula === cedula);
 }
-
         // Get membership by ID
         function getMembershipById(id) {
             const data = getGymData();
@@ -1010,8 +1044,8 @@
             }).forEach(client => {
                 // For attendance client select
                 const option1 = document.createElement('option');
-                option1.value = client.id;
-                option1.textContent = client.name;
+                option1.value = client.cedula;
+                option1.textContent = client.cedula;
                 attendanceClientSelect.appendChild(option1);
                 
                 // For payment client select
@@ -1033,6 +1067,16 @@
                 attendanceReportSelect.appendChild(option4);
             });
         }
+
+        document.getElementById('client-cedula').addEventListener('input', function(e) {
+    // Elimina cualquier carácter que no sea número
+    this.value = this.value.replace(/[^0-9]/g, '');
+    
+    // Limita a 11 caracteres (por si acaso)
+    if (this.value.length > 11) {
+        this.value = this.value.slice(0, 11);
+    }
+});
 
         // Load data into trainer select
         function loadTrainerSelect() {
@@ -1108,9 +1152,9 @@
                         </span>
                     </td>
                     <td>
-                        <button class="btn btn-primary" onclick="viewClient(${client.id})">Ver</button>
-                        <button class="btn btn-warning" onclick="editClient(${client.id})">Editar</button>
-                        <button class="btn btn-danger" onclick="deleteClient(${client.id})">Eliminar</button>
+                        <button class="btn btn-primary" onclick="viewClient('${client.cedula}')">Ver</button>
+                        <button class="btn btn-warning" onclick="editClient('${client.cedula}')">Editar</button>
+                        <button class="btn btn-danger" onclick="deleteClient('${client.cedula}')">Eliminar</button>
                     </td>
                 `;
                 tableBody.appendChild(row);
@@ -1159,7 +1203,7 @@
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${attendance.id}</td>
+                    <td>${attendance.client_cedula}</td>
                     <td>${client ? client.name : 'Cliente eliminado'}</td>
                     <td>${formatDateTime(attendance.date, attendance.time)}</td>
                     <td>${trainer ? trainer.name : 'Ninguno'}</td>
@@ -1217,7 +1261,7 @@
                 tableBody.appendChild(row);
             });
         }
-// Continuing from the provided code
+
 
     // Load trainers table
     function loadTrainersTable() {
@@ -1244,9 +1288,9 @@
     }
 
     // View client details
-    function viewClient(clientId) {
+    function viewClient(cedula) {
         const data = getGymData();
-        const client = data.clients.find(c => c.id === clientId);
+        const client = data.clients.find(c => c.cedula === cedula);
         
         if (client) {
             const membership = getMembershipById(client.membership_id);
@@ -1254,7 +1298,7 @@
             const isActive = isMembershipActive(client.start_date, membership.duration);
             
             // Set client details
-            document.getElementById('view-client-id').textContent = client.id;
+            document.getElementById('view-client-id').textContent = client.cedula;
             document.getElementById('view-client-name').textContent = client.name;
             document.getElementById('view-client-email').textContent = client.email;
             document.getElementById('view-client-phone').textContent = client.phone;
@@ -1273,7 +1317,7 @@
             attendanceTable.innerHTML = '';
             
             data.attendance
-                .filter(a => a.client_id === clientId)
+                .filter(a => a.client_cedula === cedula)
                 .sort((a, b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time))
                 .forEach(attendance => {
                     const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
@@ -1327,16 +1371,16 @@
     }
 
     // Edit client
-    function editClient(clientId) {
+    function editClient(cedula) {
         const data = getGymData();
-        const client = data.clients.find(c => c.id === clientId);
+        const client = data.clients.find(c => c.cedula === cedula);
         
         if (client) {
             // Set modal title
             document.getElementById('client-modal-title').textContent = 'Editar Cliente';
             
             // Fill form with client data
-            document.getElementById('client-id').value = client.id;
+            document.getElementById('client-cedula').value = client.cedula;
             document.getElementById('client-name').value = client.name;
             document.getElementById('client-email').value = client.email;
             document.getElementById('client-phone').value = client.phone;
@@ -1351,13 +1395,14 @@
     }
 
     // Delete client
-    function deleteClient(clientId) {
+    function deleteClient(cedula) {
         if (confirm('¿Estás seguro de que deseas eliminar este cliente?')) {
             const data = getGymData();
-            data.clients = data.clients.filter(c => c.id !== clientId);
+            data.clients = data.clients.filter(c => c.cedula !== cedula);
             saveGymData(data);
             loadClientsTable();
             loadClientSelect();
+            updateDashboardStats();
         }
     }
 
@@ -1525,7 +1570,7 @@
         let filteredAttendance = data.attendance;
         
         if (clientId) {
-            filteredAttendance = data.attendance.filter(a => a.client_id === parseInt(clientId));
+            filteredAttendance = data.attendance.filter(a => a.client_cedula === parseInt(cedula));
         }
         
         // Sort by date (newest first)
@@ -1575,7 +1620,7 @@
         
         // Filter by client if selected
         if (clientId) {
-            filteredAttendance = filteredAttendance.filter(a => a.client_id === parseInt(clientId));
+            filteredAttendance = filteredAttendance.filter(a => a.client_cedula === parseInt(cedula));
         }
         
         // Filter by date range if provided
@@ -1852,21 +1897,45 @@
 
     // Form submissions
     // Client form
-    document.getElementById('client-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        
-        const data = getGymData();
-        const clientId = document.getElementById('client-id').value;
-        
-        const client = {
-            name: document.getElementById('client-name').value,
-            email: document.getElementById('client-email').value,
-            phone: document.getElementById('client-phone').value,
-            birthdate: document.getElementById('client-birthdate').value,
-            gender: document.getElementById('client-gender').value,
-            membership_id: parseInt(document.getElementById('client-membership').value),
-            start_date: document.getElementById('client-start-date').value
-        };
+    document.getElementById('client-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Extraer el valor de la cédula
+    const cedula = document.getElementById('client-cedula').value.trim();
+    
+    // Validar que la cédula no se repita
+    const data = getGymData();
+    if (data.clients.some(client => client.cedula === cedula)) {
+        alert("La cédula ya existe. Por favor, ingresa una cédula única.");
+        return;
+    }
+    
+    // Extraer los demás campos
+    const name = document.getElementById('client-name').value;
+    const email = document.getElementById('client-email').value;
+    const phone = document.getElementById('client-phone').value;
+    const birthdate = document.getElementById('client-birthdate').value;
+    const gender = document.getElementById('client-gender').value;
+    const membership_id = document.getElementById('client-membership').value;
+    const start_date = document.getElementById('client-start-date').value;
+
+    // Crear el objeto cliente utilizando la cédula como clave primaria
+    const newClient = {
+        cedula: cedula,
+        name: name,
+        email: email,
+        phone: phone,
+        birthdate: birthdate,
+        gender: gender,
+        membership_id: membership_id,
+        start_date: start_date
+    };
+    
+    data.clients.push(newClient);
+    saveGymData(data);
+    loadClientsTable();
+    // Opcional: cerrar el modal
+    closeModal('client-modal');
         
         if (clientId) {
             // Update existing client
@@ -1922,6 +1991,7 @@
         loadClientMembershipSelect();
         loadPaymentMembershipSelect();
         loadMembershipTypeSelect();
+        updateDashboardStats();
         closeModal('membership-modal');
         this.reset();
         document.getElementById('membership-id').value = '';
@@ -1935,7 +2005,7 @@
         const attendanceId = document.getElementById('attendance-id').value;
         
         const attendance = {
-            client_id: parseInt(document.getElementById('attendance-client').value),
+            client_cedula: parseInt(document.getElementById('attendance-client').value),
             date: document.getElementById('attendance-date').value,
             time: document.getElementById('attendance-time').value,
             status: document.getElementById('attendance-status').value
@@ -2044,30 +2114,267 @@
     loadTrainerSelect();
     closeModal('trainer-modal');
     this.reset();
+        document.getElementById('trainer-id').value = '';
+        });
+    
+        // Attendance form
+        document.getElementById('attendance-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const data = getGymData();
+            const attendanceId = document.getElementById('attendance-id').value;
+            const attendance = {
+                id: attendanceId ? parseInt(attendanceId) : generateId('attendance'),
+                client_cedula: parseInt(document.getElementById('attendance-client').value),
+                date: document.getElementById('attendance-date').value,
+                time: document.getElementById('attendance-time').value,
+                trainer_id: document.getElementById('attendance-trainer').value ? parseInt(document.getElementById('attendance-trainer').value) : null,
+                status: document.getElementById('attendance-status').value
+            };
+    
+            if (attendanceId) {
+                const index = data.attendance.findIndex(a => a.id === parseInt(attendanceId));
+                data.attendance[index] = attendance;
+            } else {
+                data.attendance.push(attendance);
+            }
+    
+            saveGymData(data);
+            loadAttendanceTable();
+            closeModal('attendance-modal');
+        });
+    
+        // Payment form
+        document.getElementById('payment-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const data = getGymData();
+            const paymentId = document.getElementById('payment-id').value;
+            const payment = {
+                id: paymentId ? parseInt(paymentId) : generateId('payments'),
+                client_id: parseInt(document.getElementById('payment-client').value),
+                membership_id: parseInt(document.getElementById('payment-membership').value),
+                amount: parseFloat(document.getElementById('payment-amount').value),
+                discount: parseFloat(document.getElementById('payment-discount').value),
+                method: document.getElementById('payment-method').value,
+                status: document.getElementById('payment-status').value,
+                date: document.getElementById('payment-date').value
+            };
+    
+            if (paymentId) {
+                const index = data.payments.findIndex(p => p.id === parseInt(paymentId));
+                data.payments[index] = payment;
+            } else {
+                data.payments.push(payment);
+            }
+    
+            saveGymData(data);
+            loadPaymentsTable();
+            closeModal('payment-modal');
+        });
+    
+        // Trainer form
+        document.getElementById('trainer-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const data = getGymData();
+            const trainerId = document.getElementById('trainer-id').value;
+            const trainer = {
+                id: trainerId ? parseInt(trainerId) : generateId('trainers'),
+                name: document.getElementById('trainer-name').value,
+                specialty: document.getElementById('trainer-specialty').value,
+                email: document.getElementById('trainer-email').value,
+                phone: document.getElementById('trainer-phone').value,
+                schedule: document.getElementById('trainer-schedule').value
+            };
+    
+            if (trainerId) {
+                const index = data.trainers.findIndex(t => t.id === parseInt(trainerId));
+                data.trainers[index] = trainer;
+            } else {
+                data.trainers.push(trainer);
+            }
+    
+            saveGymData(data);
+            loadTrainersTable();
+            closeModal('trainer-modal');
+        });
+    
+        // Close modal when clicking on X or outside the modal
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal-close') || event.target.hasAttribute('data-close')) {
+                const modalId = event.target.getAttribute('data-close');
+                closeModal(modalId);
+            }
+        });
+    
+        // Tab functionality
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const tab = this.getAttribute('data-tab');
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById(tab).classList.add('active');
+            });
+        });
+
+        document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', function() {
+        if (this.getAttribute('data-page') === 'dashboard') {
+            updateDashboardStats();
+        }
+        // Ocultar todas las páginas
+        document.querySelectorAll('.page').forEach(page => {
+            page.style.display = 'none';
+        });
+        
+
+        // Obtener el atributo "data-page" del elemento clickeado
+        const pageId = this.getAttribute('data-page') + '-page';
+
+        // Mostrar la página seleccionada
+        document.getElementById(pageId).style.display = 'block';
+
+        // Cambiar el título de la página
+        document.getElementById('page-title').innerText = this.innerText;
+
+        // Remover la clase 'active' de todos los elementos y agregarla al actual
+        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+        this.classList.add('active');
+    });
+});
+document.getElementById('add-trainer-btn').addEventListener('click', function() {
+    // Limpiar el formulario antes de abrir el modal
+    document.getElementById('trainer-form').reset();
     document.getElementById('trainer-id').value = '';
+    document.getElementById('trainer-modal-title').textContent = 'Agregar Entrenador';
+    
+    // Abrir el modal
+    openModal('trainer-modal');
 });
 
-// Initialize the application
-document.addEventListener('DOMContentLoaded', function() {
-    // Check if local storage has data, otherwise initialize with demo data
-    if (!localStorage.getItem('gymData')) {
-        initializeDemoData();
-    }
-    
-    // Load data into all tables and selects
-    loadClientsTable();
-    loadMembershipsTable();
-    loadAttendanceTable();
-    loadPaymentsTable();
-    loadTrainersTable();
-    
-    // Load all select elements
-    loadClientSelect();
-    loadClientMembershipSelect();
-    loadPaymentMembershipSelect();
-    loadTrainerSelect();
-    loadMembershipTypeSelect();
-    
-    // Show dashboard tab by default
-    document.querySelector('.tab-btn[data-tab="dashboard"]').click();
+// Listener para abrir el modal de clientes al hacer clic en "+ Agregar Cliente"
+document.getElementById('add-client-btn').addEventListener('click', function() {
+    // Reinicia el formulario para limpiar datos anteriores
+    document.getElementById('client-form').reset();
+    // Cambia el título del modal a "Agregar Cliente"
+    document.getElementById('client-modal-title').textContent = 'Agregar Cliente';
+    // Abre el modal
+    openModal('client-modal');
 });
+
+// Función para abrir un modal (usa display: flex, según tu CSS)
+function openModal(modalId) {
+    var modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+// Función para cerrar un modal
+function closeModal(modalId) {
+    var modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Asigna un listener a todos los botones que tengan el atributo data-close,
+// para que al hacer clic cierren el modal correspondiente.
+document.querySelectorAll('[data-close]').forEach(function(button) {
+    button.addEventListener('click', function() {
+        var modalId = this.getAttribute('data-close');
+        closeModal(modalId);
+    });
+});
+
+document.getElementById('add-membership-btn') && document.getElementById('add-membership-btn').addEventListener('click', function() {
+    document.getElementById('membership-form').reset();
+    document.getElementById('membership-modal-title').textContent = 'Agregar Membresía';
+    openModal('membership-modal');
+});
+document.getElementById('add-attendance-btn') && document.getElementById('add-attendance-btn').addEventListener('click', function() {
+    document.getElementById('attendance-form').reset();
+    document.getElementById('attendance-modal-title').textContent = 'Registrar Asistencia';
+    // Asigna la fecha actual (formato YYYY-MM-DD)
+    var today = new Date().toISOString().split('T')[0];
+    document.getElementById('attendance-date').value = today;
+    
+    // Asigna la hora actual en formato HH:MM
+    var now = new Date();
+    var hours = now.getHours().toString().padStart(2, '0');
+    var minutes = now.getMinutes().toString().padStart(2, '0');
+    document.getElementById('attendance-time').value = hours + ':' + minutes;
+    openModal('attendance-modal');
+});
+document.getElementById('add-payment-btn') && document.getElementById('add-payment-btn').addEventListener('click', function() {
+    document.getElementById('payment-form').reset();
+    document.getElementById('payment-modal-title').textContent = 'Registrar Pago';
+    openModal('payment-modal');
+});
+
+// Funciones para abrir y cerrar modals
+function openModal(modalId) {
+    var modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+function closeModal(modalId) {
+    var modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+// Listener para botones con data-close
+document.querySelectorAll('[data-close]').forEach(function(button) {
+    button.addEventListener('click', function() {
+        var modalId = this.getAttribute('data-close');
+        closeModal(modalId);
+    });
+});
+
+// Listener para el select de clientes en el modal de asistencia
+document.getElementById('attendance-client').addEventListener('change', function() {
+    var cedula = this.value; // Obtiene la cédula seleccionada
+    var client = getClientByCedula(cedula); // Usa la función ya definida para obtener el cliente
+    if (client) {
+        document.getElementById('attendance-client-name').value = client.name; // Auto-completa el nombre
+    } else {
+        document.getElementById('attendance-client-name').value = ''; // Limpia el campo si no se encuentra el cliente
+    }
+});
+function updateDashboardStats() {
+    const data = getGymData();
+    
+    // Contar clientes activos
+    const activeClients = data.clients.filter(client => {
+        const membership = getMembershipById(client.membership_id);
+        return membership && isMembershipActive(client.start_date, membership.duration);
+    }).length;
+    
+    // Contar asistencias hoy
+    const today = new Date().toISOString().split('T')[0];
+    const todayAttendance = data.attendance.filter(a => a.date === today && a.status === 'Confirmada').length;
+    
+    // Contar entrenadores
+    const trainersCount = data.trainers.length;
+    
+    // Calcular ingresos mensuales
+    const currentMonth = new Date().getMonth() + 1;
+    const currentYear = new Date().getFullYear();
+    const monthlyIncome = data.payments
+        .filter(p => {
+            const paymentDate = new Date(p.date);
+            return paymentDate.getMonth() + 1 === currentMonth && 
+                   paymentDate.getFullYear() === currentYear &&
+                   p.status === 'Pagado';
+        })
+        .reduce((sum, p) => sum + (p.amount * (1 - p.discount / 100)), 0);
+    
+    // Actualizar los valores en el dashboard
+    document.getElementById('active-clients-count').textContent = activeClients;
+    document.getElementById('today-attendance-count').textContent = todayAttendance;
+    document.getElementById('trainers-count').textContent = trainersCount;
+    document.getElementById('monthly-income').textContent = `$${monthlyIncome.toFixed(2)}`;
+}
+    </script>
+

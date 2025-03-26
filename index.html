@@ -1945,13 +1945,6 @@ function saveGymData(data) {
     // Extraer el valor de la cédula
     const cedula = document.getElementById('client-cedula').value.trim();
     
-    // Validar que la cédula no se repita
-    const data = getGymData();
-    if (data.clients.some(client => client.cedula === cedula)) {
-        alert("La cédula ya existe. Por favor, ingresa una cédula única.");
-        return;
-    }
-    
     // Extraer los demás campos
     const name = document.getElementById('client-name').value;
     const email = document.getElementById('client-email').value;

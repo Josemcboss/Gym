@@ -1095,6 +1095,18 @@ function saveGymData(data) {
             });
         }
 
+        // Autocompletar monto según membresía seleccionada
+document.getElementById('payment-membership').addEventListener('change', function () {
+    const membershipId = parseInt(this.value);
+    const membership = getMembershipById(membershipId);
+
+    if (membership) {
+        document.getElementById('payment-amount').value = membership.price;
+    } else {
+        document.getElementById('payment-amount').value = '';
+    }
+});
+
         // Load data into client select
         function loadClientSelect() {
             const data = getGymData();

@@ -839,8 +839,15 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Check if local storage has data, otherwise initialize with demo data
     if (!localStorage.getItem('gymData')) {
-        initializeLocalStorage(); //
+        initializeLocalStorage();
+    } // <-- Aquí estaba el error: faltaba esta llave de cierre
+
+    // Verificar que las funciones necesarias existen
+    if (typeof getMembershipById !== 'function') {
+        console.error('Error crítico: getMembershipById no está definida');
+        return;
     }
+
     // Load data into all tables and selects
     loadClientsTable();
     loadMembershipsTable();
@@ -855,13 +862,13 @@ document.addEventListener('DOMContentLoaded', function() {
     loadTrainerSelect();
     loadMembershipTypeSelect();
     updateDashboardStats();
+    
     // Show dashboard tab by default
     const dashboardTab = document.querySelector('.tab-btn[data-tab="dashboard"]');
     if (dashboardTab) {
         dashboardTab.click();
     }
-    
-});
+}); 
 
 
 function initializeLocalStorage() {
@@ -911,27 +918,27 @@ function initializeLocalStorage() {
                         payments: 0
                     }
                 };
-                
+                initializeLocalStorage();
                 // Save to localStorage
                 localStorage.setItem('gymData', JSON.stringify(initialData));
             }
         }
 
-        function getGymData() {
-    const data = JSON.parse(localStorage.getItem('gymData'));
-    
-    // Verificar que `data` existe y tiene la estructura correcta
-    if (!data || typeof data !== 'object') {
-        console.error("Error: gymData no está definido o tiene un formato incorrecto.");
-        return {
-            clients: [],
-            trainers: [],
-            memberships: [],
-            attendance: [],
-            payments: [],
-            counters: { clients: 0, trainers: 0, attendance: 0, payments: 0 }
-        };
-    }
+        // Get data from localStorage
+    function getGymData() {
+    const data = JSON.parse(localStorage.getItem('gymData')) || {
+        clients: [],
+        trainers: [],
+        memberships: [],
+        attendance: [],
+        payments: [],
+        counters: {
+            clients: 0,
+            trainers: 0,
+            attendance: 0,
+            payments: 0
+        }
+    };
     if (!Array.isArray(data.payments)) {
         console.warn("Advertencia: `payments` no es un array. Se inicializa vacío.");
         data.payments = [];
@@ -953,9 +960,7 @@ function generateId(entity) {
     saveGymData(data);
     return data.counters[entity];
 }
-function saveGymData(data) {
-    localStorage.setItem('gymData', JSON.stringify(data));
-}
+
 
         // Save data to localStorage
         function saveGymData(data) {
@@ -997,43 +1002,50 @@ function saveGymData(data) {
     if (!startDate || !duration) return null;
     
     const date = new Date(startDate);
-    
     switch(duration) {
-        case 'mensual':
-            date.setMonth(date.getMonth() + 1);
-            break;
-        case 'trimestral':
-            date.setMonth(date.getMonth() + 3);
-            break;
-        case 'semestral':
-            date.setMonth(date.getMonth() + 6);
-            break;
-        case 'anual':
-            date.setFullYear(date.getFullYear() + 1);
-            break;
-        default:
-            return null;
+        case 'mensual': date.setMonth(date.getMonth() + 1); break;
+        case 'trimestral': date.setMonth(date.getMonth() + 3); break;
+        case 'semestral': date.setMonth(date.getMonth() + 6); break;
+        case 'anual': date.setFullYear(date.getFullYear() + 1); break;
+        default: return null;
     }
-    
     return date.toISOString().split('T')[0];
 }
+
         // Check if a membership is active
         function isMembershipActive(startDate, duration) {
-            const endDate = new Date(calculateEndDate(startDate, duration));
-            return new Date() <= endDate;
-        }
-
+        if (!startDate || !duration) return false;
+        const endDate = new Date(calculateEndDate(startDate, duration));
+        return new Date() <= endDate;
+}
         // Get client by ID
         function getClientByCedula(cedula) {
+    if (!cedula && cedula !== 0) return null;
+    
     const data = getGymData();
+    return data.clients.find(client => 
+        client && client.cedula && client.cedula.toString() === cedula.toString()
+    ) || null;
+}
+
     // Asegúrate de que la cédula se compara correctamente (puede ser string vs number)
     return data.clients.find(client => client.cedula.toString() === cedula.toString());
 }
         // Get membership by ID
         function getMembershipById(id) {
-            const data = getGymData();
-            return data.memberships.find(membership => membership.id === parseInt(id));
-        }
+    if (id === undefined || id === null) return null;
+    
+    const data = getGymData();
+    const membership = data.memberships.find(m => 
+        m && m.id && m.id.toString() === id.toString()
+    );
+    
+    if (!membership) {
+        console.warn(`Membresía con ID ${id} no encontrada`);
+        return null;
+    }
+    return membership;
+}
 
         // Get trainer by ID
         function getTrainerById(id) {
@@ -1180,42 +1192,45 @@ function saveGymData(data) {
 
         // Load clients table
         function loadClientsTable() {
-    const data = getGymData();
-    const tableBody = document.getElementById('clients-table');
-    tableBody.innerHTML = '';
-    
-    data.clients.forEach(client => {
-        // Verificar que el cliente y su membresía_id existan
-        const membership = client.membership_id ? getMembershipById(client.membership_id) : null;
+    try {
+        const data = getGymData();
+        const tableBody = document.getElementById('clients-table');
+        tableBody.innerHTML = '';
         
-        // Calcular fechas con manejo seguro
-        const startDate = client.start_date || null;
-        const endDate = membership && startDate ? 
-            calculateEndDate(startDate, membership.duration) : null;
-        const isActive = membership && startDate ? 
-            isMembershipActive(startDate, membership.duration) : false;
-        
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${client.cedula || 'N/A'}</td>
-            <td>${client.name || 'Nombre no disponible'}</td>
-            <td>${client.email || 'N/A'}</td>
-            <td>${client.phone || 'N/A'}</td>
-            <td>${membership ? membership.name : 'Membresía no encontrada'}</td>
-            <td>
-                <span class="badge ${isActive ? 'badge-success' : 'badge-danger'}">
-                    ${isActive ? 'Activo' : 'Inactivo'}
-                </span>
-            </td>
-            <td>
-                <button class="btn btn-primary" onclick="viewClient('${client.cedula}')">Ver</button>
-                <button class="btn btn-warning" onclick="editClient('${client.cedula}')">Editar</button>
-                <button class="btn btn-danger" onclick="deleteClient('${client.cedula}')">Eliminar</button>
-            </td>
-        `;
-        tableBody.appendChild(row);
-    });
+        data.clients.forEach(client => {
+            const membership = client.membership_id ? getMembershipById(client.membership_id) : null;
+            const endDate = membership && client.start_date ? 
+                calculateEndDate(client.start_date, membership.duration) : null;
+            const isActive = membership && client.start_date ? 
+                isMembershipActive(client.start_date, membership.duration) : false;
+            
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${client.cedula || 'N/A'}</td>
+                <td>${client.name || 'Sin nombre'}</td>
+                <td>${client.email || 'N/A'}</td>
+                <td>${client.phone || 'N/A'}</td>
+                <td>${membership ? membership.name : 'Sin membresía'}</td>
+                <td>
+                    <span class="badge ${isActive ? 'badge-success' : 'badge-danger'}">
+                        ${isActive ? 'Activo' : 'Inactivo'}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-primary" onclick="viewClient('${client.cedula}')">Ver</button>
+                    <button class="btn btn-warning" onclick="editClient('${client.cedula}')">Editar</button>
+                    <button class="btn btn-danger" onclick="deleteClient('${client.cedula}')">Eliminar</button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Error en loadClientsTable:', error);
+        const tableBody = document.getElementById('clients-table');
+        tableBody.innerHTML = '<tr><td colspan="7">Error al cargar los clientes</td></tr>';
+    }
 }
+
         // Load memberships table
         function loadMembershipsTable() {
             const data = getGymData();

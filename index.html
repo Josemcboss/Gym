@@ -1579,47 +1579,56 @@ function saveGymData(data) {
     }
 
     // Filter attendance by client
-    function filterAttendanceByClient(clientId) {
-        const data = getGymData();
-        const tableBody = document.getElementById('attendance-table');
-        tableBody.innerHTML = '';
-        
-        let filteredAttendance = data.attendance;
-        
-        if (clientId) {
-            filteredAttendance = data.attendance.filter(a => a.client_cedula === parseInt(cedula));
-        }
-        
-        // Sort by date (newest first)
-        filteredAttendance.sort((a, b) => {
-            const dateA = new Date(a.date + 'T' + a.time);
-            const dateB = new Date(b.date + 'T' + b.time);
-            return dateB - dateA;
-        });
-        
-        filteredAttendance.forEach(attendance => {
-            const client = getClientByCedula(attendance.client_cedula);
-            const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
-            
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${attendance.id}</td>
-                <td>${client ? client.name : 'Cliente eliminado'}</td>
-                <td>${formatDateTime(attendance.date, attendance.time)}</td>
-                <td>${trainer ? trainer.name : 'Ninguno'}</td>
-                <td>
-                    <span class="badge ${attendance.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
-                        ${attendance.status}
-                    </span>
-                </td>
-                <td>
-                    <button class="btn btn-warning" onclick="editAttendance(${attendance.id})">Editar</button>
-                    <button class="btn btn-danger" onclick="deleteAttendance(${attendance.id})">Eliminar</button>
-                </td>
-            `;
-            tableBody.appendChild(row);
-        });
+// Función corregida para filtrar asistencias por cliente
+function filterAttendanceByClient(cedula) {
+    const data = getGymData();
+    const tableBody = document.getElementById('attendance-table');
+    tableBody.innerHTML = '';
+    
+    let filteredAttendance = data.attendance;
+    
+    if (cedula) {
+        // Filtrar por cédula exacta (sin parsear a número)
+        filteredAttendance = data.attendance.filter(a => a.client_cedula === cedula);
     }
+    
+    // Ordenar por fecha (más reciente primero)
+    filteredAttendance.sort((a, b) => {
+        const dateA = new Date(a.date + 'T' + a.time);
+        const dateB = new Date(b.date + 'T' + b.time);
+        return dateB - dateA;
+    });
+    
+    // Mostrar resultados
+    filteredAttendance.forEach(attendance => {
+        const client = getClientByCedula(attendance.client_cedula);
+        const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${attendance.client_cedula}</td>
+            <td>${client ? client.name : 'Cliente eliminado'}</td>
+            <td>${formatDateTime(attendance.date, attendance.time)}</td>
+            <td>${trainer ? trainer.name : 'Ninguno'}</td>
+            <td>
+                <span class="badge ${attendance.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
+                    ${attendance.status}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-warning" onclick="editAttendance(${attendance.id})">Editar</button>
+                <button class="btn btn-danger" onclick="deleteAttendance(${attendance.id})">Eliminar</button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+// Función auxiliar para obtener cliente por cédula (asegúrate de que existe)
+function getClientByCedula(cedula) {
+    const data = getGymData();
+    return data.clients.find(client => client.cedula.toString() === cedula.toString());
+}
 
     // Handle attendance filter change
     document.getElementById('attendance-client-filter').addEventListener('change', function() {

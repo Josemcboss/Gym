@@ -1298,15 +1298,12 @@ document.getElementById('payment-client').addEventListener('change', function ()
     const tableBody = document.getElementById('attendance-table');
     tableBody.innerHTML = '';
     
-    // Sort by date (newest first)
+    // Ordenar por fecha más reciente
     const sortedAttendance = [...data.attendance].sort((a, b) => {
-        const dateA = new Date(a.date + 'T' + a.time);
-        const dateB = new Date(b.date + 'T' + b.time);
-        return dateB - dateA;
+        return new Date(`${b.date} ${b.time}`) - new Date(`${a.date} ${a.time}`);
     });
     
     sortedAttendance.forEach(attendance => {
-        // Usar la función corregida getClientByCedula
         const client = getClientByCedula(attendance.client_cedula);
         const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
         
@@ -1315,7 +1312,7 @@ document.getElementById('payment-client').addEventListener('change', function ()
             <td>${attendance.client_cedula}</td>
             <td>${client ? client.name : 'Cliente no encontrado'}</td>
             <td>${formatDateTime(attendance.date, attendance.time)}</td>
-            <td>${trainer ? trainer.name : 'Ninguno'}</td>
+            <td>${trainer ? trainer.name : 'Sin entrenador'}</td>
             <td>
                 <span class="badge ${attendance.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
                     ${attendance.status}
@@ -1399,7 +1396,15 @@ function loadPaymentsTable() {
             tableBody.appendChild(row);
         });
     }
-
+    document.getElementById('trainer-phone').addEventListener('input', function(e) {
+    // Remove any non-numeric characters
+    this.value = this.value.replace(/[^0-9]/g, '');
+    
+    // Limit to 10 digits
+    if (this.value.length > 10) {
+        this.value = this.value.slice(0, 10);
+    }
+});
     // View client details
     function viewClient(cedula) {
     const data = getGymData();
@@ -1545,26 +1550,27 @@ function loadPaymentsTable() {
 
     // Edit attendance
     function editAttendance(attendanceId) {
-        const data = getGymData();
-        const attendance = data.attendance.find(a => a.id === attendanceId);
+    const data = getGymData();
+    const attendance = data.attendance.find(a => a.id === attendanceId);
+    
+    if (attendance) {
+        document.getElementById('attendance-modal-title').textContent = 'Editar Asistencia';
+        document.getElementById('attendance-id').value = attendance.id;
+        document.getElementById('attendance-client').value = attendance.client_cedula;
+        document.getElementById('attendance-date').value = attendance.date;
+        document.getElementById('attendance-time').value = attendance.time;
+        document.getElementById('attendance-trainer').value = attendance.trainer_id || '';
+        document.getElementById('attendance-status').value = attendance.status;
         
-        if (attendance) {
-            // Set modal title
-            document.getElementById('attendance-modal-title').textContent = 'Editar Asistencia';
-            
-            // Fill form with attendance data
-            document.getElementById('attendance-id').value = attendance.id;
-            document.getElementById('attendance-client').value = attendance.client_id;
-            document.getElementById('attendance-date').value = attendance.date;
-            document.getElementById('attendance-time').value = attendance.time;
-            document.getElementById('attendance-trainer').value = attendance.trainer_id || '';
-            document.getElementById('attendance-status').value = attendance.status;
-            
-            // Show modal
-            openModal('attendance-modal');
+        // Actualizar el nombre del cliente
+        const client = getClientByCedula(attendance.client_cedula);
+        if (client) {
+            document.getElementById('attendance-client-name').value = client.name;
         }
+        
+        openModal('attendance-modal');
     }
-
+}
     // Delete attendance
     function deleteAttendance(attendanceId) {
         if (confirm('¿Estás seguro de que deseas eliminar este registro de asistencia?')) {
@@ -2438,52 +2444,40 @@ function viewAttendanceDetails(attendanceId) {
 
     // Attendance form
     document.getElementById('attendance-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        
-        const data = getGymData();
-        const attendanceId = document.getElementById('attendance-id').value;
-        
-        const attendance = {
-            client_cedula: parseInt(document.getElementById('attendance-client').value),
-            date: document.getElementById('attendance-date').value,
-            time: document.getElementById('attendance-time').value,
-            status: document.getElementById('attendance-status').value
-        };
-        
-        // Add trainer if selected
-        const trainerId = document.getElementById('attendance-trainer').value;
-        if (trainerId) {
-            attendance.trainer_id = parseInt(trainerId);
+    event.preventDefault();
+    
+    const data = getGymData();
+    const attendanceId = document.getElementById('attendance-id').value;
+    
+    // Crear objeto de asistencia
+    const attendance = {
+        id: attendanceId ? parseInt(attendanceId) : generateId('attendance'),
+        client_cedula: document.getElementById('attendance-client').value,
+        date: document.getElementById('attendance-date').value,
+        time: document.getElementById('attendance-time').value,
+        trainer_id: document.getElementById('attendance-trainer').value || null,
+        status: document.getElementById('attendance-status').value
+    };
+    
+    if (attendanceId) {
+        // Actualizar asistencia existente
+        const index = data.attendance.findIndex(a => a.id === parseInt(attendanceId));
+        if (index !== -1) {
+            data.attendance[index] = attendance;
         }
-        
-        if (attendanceId) {
-            // Update existing attendance
-            attendance.id = parseInt(attendanceId);
-            const index = data.attendance.findIndex(a => a.id === attendance.id);
-            if (index !== -1) {
-                data.attendance[index] = attendance;
-            }
-        } else {
-            // Add new attendance
-            attendance.id = generateId('attendance');
-            data.attendance.push(attendance);
-        }
-        
-        saveGymData(data);
-        loadAttendanceTable();
-        loadRecentAttendance();
-        
-        // Refresh the attendance filter if it's active
-        const clientFilter = document.getElementById('attendance-client-filter').value;
-        if (clientFilter) {
-            filterAttendanceByClient(clientFilter);
-        }
-        
-        closeModal('attendance-modal');
-        this.reset();
-        document.getElementById('attendance-id').value = '';
-    });
-
+    } else {
+        // Agregar nueva asistencia
+        data.attendance.push(attendance);
+    }
+    
+    saveGymData(data);
+    loadAttendanceTable();
+    loadRecentAttendance();
+    updateDashboardStats();
+    
+    closeModal('attendance-modal');
+    this.reset();
+});
    
     // Trainer form
     document.getElementById('trainer-form').addEventListener('submit', function(event) {
@@ -2722,12 +2716,22 @@ document.querySelectorAll('[data-close]').forEach(function(button) {
 
 // Listener para el select de clientes en el modal de asistencia
 document.getElementById('attendance-client').addEventListener('change', function() {
-    var cedula = this.value; // Obtiene la cédula seleccionada
-    var client = getClientByCedula(cedula); // Usa la función ya definida para obtener el cliente
+    const cedula = this.value;
+    const client = getClientByCedula(cedula);
+    const clientNameInput = document.getElementById('attendance-client-name');
+    
     if (client) {
-        document.getElementById('attendance-client-name').value = client.name; // Auto-completa el nombre
+        clientNameInput.value = client.name;
+        // Verificar si la membresía está activa
+        const membership = getMembershipById(client.membership_id);
+        if (!isMembershipActive(client.start_date, membership.duration)) {
+            alert('Advertencia: Este cliente no tiene una membresía activa');
+        }
     } else {
-        document.getElementById('attendance-client-name').value = ''; // Limpia el campo si no se encuentra el cliente
+        clientNameInput.value = '';
+        if (cedula) {
+            alert('Cliente no encontrado');
+        }
     }
 });
 function updateDashboardStats() {

@@ -1061,7 +1061,7 @@ function saveGymData(data) {
 
     // Asegúrate de que la cédula se compara correctamente (puede ser string vs number)
     return data.clients.find(client => client.cedula.toString() === cedula.toString());
-}
+
         // Get membership by ID
         function getMembershipById(id) {
             const data = getGymData();
@@ -2951,6 +2951,23 @@ document.getElementById('client-email').addEventListener('input', function () {
 
     warning.style.display = length === 75 ? 'inline' : 'none';
 });
+
+    function initializeEventListeners() {
+    // Remover listeners existentes
+    document.querySelectorAll('[data-close]').forEach(button => {
+        button.removeEventListener('click', closeModalHandler);
+    });
+    
+    // Añadir nuevos listeners
+    document.querySelectorAll('[data-close]').forEach(button => {
+        button.addEventListener('click', closeModalHandler);
+    });
+}
+
+function closeModalHandler() {
+    const modalId = this.getAttribute('data-close');
+    closeModal(modalId);
+}
 
     </script>ventListener('DOMContentLoaded', function() {
 </body>Eventos para validación de nombres

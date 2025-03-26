@@ -542,7 +542,9 @@
             <form id="client-form">
                 <div class="form-group">
                     <label class="form-label" for="client-cedula">Cédula</label>
-                    <input type="text" class="form-control" id="client-cedula" maxlength="11" pattern="[0-9]*" required placeholder="Solo números">
+                    <input type="text" class="form-control" id="client-cedula" required maxlength="11">
+                    <small id="client-cedula-count" class="text-muted">0 / 11</small>
+                    <small id="client-cedula-warning" class="text-danger" style="display: none;">Máximo 11 caracteres permitidos.</small>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="client-phone">Teléfono</label>
@@ -826,7 +828,7 @@
                     </div>
                 </div>
                 <div class="tab-content" id="client-attendance">
-                    <table>
+                    <table class="table">
                         <thead>
                             <tr>
                                 <th>Cedula</th>
@@ -847,6 +849,7 @@
                                 <th>Cedula</th>
                                 <th>Fecha</th>
                                 <th>Membresía</th>
+                                <th>Método</th>
                                 <th>Monto</th>
                                 <th>Estado</th>
                             </tr>
@@ -1189,6 +1192,7 @@ document.getElementById('payment-client').addEventListener('change', function ()
     if (this.value.length > 11) {
         this.value = this.value.slice(0, 11);
     }
+
 });
 
         // Load data into trainer select
@@ -1439,33 +1443,78 @@ function loadPaymentsTable() {
         const paymentsTable = document.getElementById('client-payments-table');
         paymentsTable.innerHTML = '';
 
-        // 🔴 **Corrección aplicada**: Definir `clientId` correctamente
-        const clientId = client.cedula; 
+        const clientId = client.cedula;
 
-        data.payments
-            .filter(p => p.client_id === clientId) // Aquí `clientId` ya está definido correctamente
-            .sort((a, b) => new Date(b.date) - new Date(a.date))
-            .forEach(payment => {
-                const membership = getMembershipById(payment.membership_id);
-                const finalAmount = payment.amount * (1 - payment.discount / 100);
-                
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${payment.id}</td>
-                    <td>${formatDate(payment.date)}</td>
-                    <td>${membership ? membership.name : 'Membresía eliminada'}</td>
-                    <td>$${finalAmount.toFixed(2)}</td>
-                    <td>
-                        <span class="badge ${
-                            payment.status === 'Pagado' ? 'badge-success' : 
-                            payment.status === 'Pendiente' ? 'badge-warning' : 'badge-danger'
-                        }">
-                            ${payment.status}
-                        </span>
-                    </td>
-                `;
-                paymentsTable.appendChild(row);
-            });
+        // Cargar asistencias del cliente
+        const attendanceTable = document.getElementById('client-attendance-table');
+attendanceTable.innerHTML = '';
+
+const clientAttendance = data.attendance
+    .filter(a => a.client_cedula === clientId)
+    .sort((a, b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time));
+
+if (clientAttendance.length === 0) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td colspan="4" class="text-center text-muted">Sin asistencias registradas</td>
+    `;
+    attendanceTable.appendChild(row);
+} else {
+    clientAttendance.forEach(att => {
+        const trainer = att.trainer_id ? getTrainerById(att.trainer_id) : null;
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${att.client_cedula}</td>
+            <td>${formatDateTime(att.date, att.time)}</td>
+            <td>${trainer ? trainer.name : 'Sin entrenador'}</td>
+            <td>
+                <span class="badge ${att.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
+                    ${att.status}
+                </span>
+            </td>
+        `;
+        attendanceTable.appendChild(row);
+    });
+}
+
+        // 🔴 **Corrección aplicada**: Definir `clientId` correctamente
+         
+        const clientPayments = data.payments
+  .filter(p => p.client_cedula === clientId)
+  .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+if (clientPayments.length === 0) {
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td colspan="5" class="text-center text-muted">Sin pagos registrados</td>
+  `;
+  paymentsTable.appendChild(row);
+} else {
+  clientPayments.forEach(payment => {
+    const membership = getMembershipById(payment.membership_id);
+    const finalAmount = payment.amount * (1 - payment.discount / 100);
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+  <td>${payment.client_cedula}</td>
+  <td>${formatDate(payment.date)}</td>
+  <td>${membership ? membership.name : 'Membresía eliminada'}</td>
+  <td>${payment.method}</td> <!-- ✅ nuevo -->
+  <td>$${finalAmount.toFixed(2)}</td>
+  <td>
+    <span class="badge ${
+      payment.status === 'Pagado' ? 'badge-success' :
+      payment.status === 'Pendiente' ? 'badge-warning' : 'badge-danger'
+    }">
+      ${payment.status}
+    </span>
+  </td>
+`;
+
+    paymentsTable.appendChild(row);
+  });
+}
 
         // Mostrar modal
         openModal('client-view-modal');
@@ -2883,14 +2932,27 @@ document.getElementById('search-client').addEventListener('input', searchClients
 document.getElementById('search-client-cedula').addEventListener('input', searchClients);
 
 // Agregar validación para el campo de cédula
-document.getElementById('search-client-cedula').addEventListener('input', function(e) {
-    // Eliminar caracteres no numéricos
+document.getElementById('client-cedula').addEventListener('input', function () {
+    // Limpiar caracteres no numéricos
     this.value = this.value.replace(/[^0-9]/g, '');
-    
+
     // Limitar a 11 caracteres
     if (this.value.length > 11) {
         this.value = this.value.slice(0, 11);
     }
+
+    // Actualizar contador
+    const length = this.value.length;
+    const counter = document.getElementById('client-cedula-count');
+    const warning = document.getElementById('client-cedula-warning');
+
+    counter.textContent = `${length} / 11`;
+
+    // Cambiar color si se acerca al límite
+    counter.style.color = length >= 10 ? 'red' : '';
+
+    // Mostrar advertencia al llegar a 11
+    warning.style.display = length === 11 ? 'inline' : 'none';
 });
 
 document.getElementById('client-phone').addEventListener('input', function(e) {
@@ -2917,6 +2979,7 @@ document.getElementById('client-name').addEventListener('input', function () {
     }
 
     warning.style.display = length === 50 ? 'inline' : 'none';
+
 });
 
 // Email - contador con advertencia
@@ -2933,7 +2996,23 @@ document.getElementById('client-email').addEventListener('input', function () {
     }
 
     warning.style.display = length === 75 ? 'inline' : 'none';
+
 });
+
+// Controlador de pestañas dentro del modal de cliente
+document.querySelectorAll('#client-view-modal .tab-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const tab = this.getAttribute('data-tab');
+
+            // Quitar la clase 'active' a todos los botones y contenidos
+            document.querySelectorAll('#client-view-modal .tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('#client-view-modal .tab-content').forEach(content => content.classList.remove('active'));
+
+            // Agregar la clase 'active' al botón y contenido seleccionado
+            this.classList.add('active');
+            document.getElementById(tab).classList.add('active');
+        });
+    });
 
     </script>
 </body>

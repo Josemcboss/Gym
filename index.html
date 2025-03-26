@@ -153,8 +153,15 @@
 
                 <div class="card">
                     <div class="search-bar">
-                        <div class="form-group">
-                            <input type="text" class="form-control" id="search-client" placeholder="Buscar cliente por nombre, correo o teléfono...">
+                        <div class="d-flex gap-2">
+                            <div class="form-group" style="flex: 1;">
+                                <input type="text" class="form-control" id="search-client" 
+                                    placeholder="Buscar por nombre, correo o teléfono...">
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <input type="text" class="form-control" id="search-client-cedula" 
+                                    placeholder="Buscar por cédula..." maxlength="11">
+                            </div>
                         </div>
                     </div>
 
@@ -1808,81 +1815,103 @@ document.getElementById('payment-form').addEventListener('submit', function (e) 
 
     // Generate income report
     function generateIncomeReport() {
-        const dateRange = document.getElementById('income-date-range').value;
-        const membershipType = document.getElementById('income-membership-type').value;
-        const paymentMethod = document.getElementById('income-payment-method').value;
-        
-        const data = getGymData();
-        let filteredPayments = data.payments.filter(p => p.status === 'Pagado');
-        
-        // Calcular rango de fechas
-        const today = new Date();
-        let startDate, endDate;
-        
-        switch(dateRange) {
-            case 'day':
-                startDate = new Date(today.setHours(0,0,0,0));
-                endDate = new Date(today.setHours(23,59,59,999));
-                break;
-            case 'week':
-                startDate = new Date(today.setDate(today.getDate() - today.getDay()));
-                endDate = new Date(today.setDate(today.getDate() + 6));
-                break;
-            case 'month':
-                startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-                endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                break;
-            case 'year':
-                startDate = new Date(today.getFullYear(), 0, 1);
-                endDate = new Date(today.getFullYear(), 11, 31);
-                break;
-        }
-        
-        // Aplicar filtros
-        filteredPayments = filteredPayments.filter(payment => {
-            const paymentDate = new Date(payment.date);
-            const matchesDate = paymentDate >= startDate && paymentDate <= endDate;
-            const matchesMembership = !membershipType || payment.membership_id.toString() === membershipType;
-            const matchesMethod = !paymentMethod || payment.method === paymentMethod;
-            
-            return matchesDate && matchesMembership && matchesMethod;
-        });
-        
-        // Generar reporte
-        const tableBody = document.getElementById('income-report-table');
-        tableBody.innerHTML = '';
-        let totalIncome = 0;
-        
-        filteredPayments.forEach(payment => {
-            const client = getClientByCedula(payment.client_cedula);
-            const membership = getMembershipById(payment.membership_id);
-            const finalAmount = payment.amount * (1 - (payment.discount || 0) / 100);
-            
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${payment.client_cedula}</td>
-                <td>${formatDate(payment.date)}</td>
-                <td>${client ? client.name : 'Cliente no encontrado'}</td>
-                <td>${membership ? membership.name : 'Membresía no encontrada'}</td>
-                <td>$${payment.amount.toFixed(2)}</td>
-                <td>${payment.discount || 0}%</td>
-                <td>$${finalAmount.toFixed(2)}</td>
-                <td>${payment.method}</td>
-                <td><span class="badge badge-success">${payment.status}</span></td>
-            `;
-            tableBody.appendChild(row);
-            totalIncome += finalAmount;
-        });
-        
-        document.getElementById('income-total').innerHTML = `<strong>$${totalIncome.toFixed(2)}</strong>`;
+    const dateRange = document.getElementById('income-date-range').value;
+    const membershipType = document.getElementById('income-membership-type').value;
+    const paymentMethod = document.getElementById('income-payment-method').value;
     
+    const data = getGymData();
+    let filteredPayments = data.payments.filter(p => p.status === 'Pagado');
+    
+    // Calculate date range
+    const today = new Date();
+    let startDate, endDate;
+    
+    switch(dateRange) {
+        case 'day':
+            startDate = new Date(today.setHours(0,0,0,0));
+            endDate = new Date(today.setHours(23,59,59,999));
+            break;
+        case 'week':
+            startDate = new Date(today.setDate(today.getDate() - today.getDay()));
+            endDate = new Date(today.setDate(today.getDate() + 6));
+            break;
+        case 'month':
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            break;
+        case 'year':
+            startDate = new Date(today.getFullYear(), 0, 1);
+            endDate = new Date(today.getFullYear(), 11, 31);
+            break;
+    }
+    
+    // Apply filters
+    filteredPayments = filteredPayments.filter(payment => {
+        const paymentDate = new Date(payment.date);
+        const matchesDate = paymentDate >= startDate && paymentDate <= endDate;
+        const matchesMembership = !membershipType || payment.membership_id.toString() === membershipType;
+        const matchesMethod = !paymentMethod || payment.method === paymentMethod;
+        
+        return matchesDate && matchesMembership && matchesMethod;
+    });
+    
+    // Generate report
+    const tableBody = document.getElementById('income-report-table');
+    tableBody.innerHTML = '';
+    let totalIncome = 0;
+    
+    if (filteredPayments.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="9" class="text-center">No se encontraron pagos para el período seleccionado</td></tr>';
+        document.getElementById('income-total').innerHTML = '<strong>$0.00</strong>';
+        return;
+    }
+    
+    filteredPayments.forEach(payment => {
+        const client = getClientByCedula(payment.client_cedula);
+        const membership = getMembershipById(payment.membership_id);
+        const finalAmount = payment.amount * (1 - (payment.discount || 0) / 100);
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${payment.client_cedula}</td>
+            <td>${formatDate(payment.date)}</td>
+            <td>${client ? client.name : 'Cliente no encontrado'}</td>
+            <td>${membership ? membership.name : 'Membresía no encontrada'}</td>
+            <td>$${payment.amount.toFixed(2)}</td>
+            <td>${payment.discount || 0}%</td>
+            <td>$${finalAmount.toFixed(2)}</td>
+            <td>${payment.method}</td>
+            <td><span class="badge badge-success">${payment.status}</span></td>
+        `;
+        tableBody.appendChild(row);
+        totalIncome += finalAmount;
+    });
+    
+    document.getElementById('income-total').innerHTML = `<strong>$${totalIncome.toFixed(2)}</strong>`;
+
 
         
-        // Generate summary
-        document.getElementById('membership-report-active').textContent = activeMemberships.length;
-        document.getElementById('membership-report-inactive').textContent = inactiveMemberships.length;
-        document.getElementById('membership-report-total').textContent = filteredClients.length;
+    function updateMembershipSummary(activeMemberships, inactiveMemberships, filteredClients) {
+    try {
+        const elements = {
+            active: document.getElementById('membership-report-active'),
+            inactive: document.getElementById('membership-report-inactive'),
+            total: document.getElementById('membership-report-total')
+        };
+        
+        if (!elements.active || !elements.inactive || !elements.total) {
+            console.error('One or more summary elements not found');
+            return;
+        }
+        
+        elements.active.textContent = activeMemberships.length;
+        elements.inactive.textContent = inactiveMemberships.length;
+        elements.total.textContent = filteredClients.length;
+    } catch (error) {
+        console.error('Error updating membership summary:', error);
     }
+    }
+}
 
     function generateMembershipReport() {
     const status = document.getElementById('membership-report-status').value;
@@ -2313,10 +2342,9 @@ function viewAttendanceDetails(attendanceId) {
 
     // Form submissions
  // Client form
-document.getElementById('client-form').addEventListener('submit', function(e) {
+ document.getElementById('client-form').addEventListener('submit', function(e) {
     e.preventDefault();
     
-    // Get the current data
     const data = getGymData();
     
     // Extract form values
@@ -2331,14 +2359,14 @@ document.getElementById('client-form').addEventListener('submit', function(e) {
 
     // Create new client object
     const newClient = {
-        cedula: cedula,
-        name: name,
-        email: email,
-        phone: phone,
-        birthdate: birthdate,
-        gender: gender,
-        membership_id: membership_id,
-        start_date: start_date
+        cedula: cedula,  // Guardar como string
+        name: document.getElementById('client-name').value,
+        email: document.getElementById('client-email').value,
+        phone: document.getElementById('client-phone').value,
+        birthdate: document.getElementById('client-birthdate').value,
+        gender: document.getElementById('client-gender').value,
+        membership_id: parseInt(document.getElementById('client-membership').value),
+        start_date: document.getElementById('client-start-date').value
     };
     
     // Check if we're editing an existing client or adding a new one
@@ -2732,6 +2760,69 @@ function updateDashboardStats() {
     document.getElementById('trainers-count').textContent = trainersCount;
     document.getElementById('monthly-income').textContent = `$${monthlyIncome.toFixed(2)}`;
 }
+// Agregar después de las funciones existentes
+function searchClients() {
+    const searchText = document.getElementById('search-client').value.toLowerCase();
+    const searchCedula = document.getElementById('search-client-cedula').value.trim();
+    const tableBody = document.getElementById('clients-table');
+    const data = getGymData();
+    
+    // Filtrar clientes
+    const filteredClients = data.clients.filter(client => {
+        const matchesText = searchText === '' || 
+            client.name.toLowerCase().includes(searchText) ||
+            client.email.toLowerCase().includes(searchText) ||
+            client.phone.toLowerCase().includes(searchText);
+            
+        const matchesCedula = searchCedula === '' || 
+            client.cedula.toString().includes(searchCedula);
+            
+        return matchesText && matchesCedula;
+    });
+    
+    // Limpiar tabla
+    tableBody.innerHTML = '';
+    
+    // Mostrar resultados
+    filteredClients.forEach(client => {
+        const membership = getMembershipById(client.membership_id);
+        const isActive = isMembershipActive(client.start_date, membership.duration);
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${client.cedula}</td>
+            <td>${client.name}</td>
+            <td>${client.email}</td>
+            <td>${client.phone}</td>
+            <td>${membership.name}</td>
+            <td>
+                <span class="badge ${isActive ? 'badge-success' : 'badge-danger'}">
+                    ${isActive ? 'Activo' : 'Inactivo'}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-primary" onclick="viewClient('${client.cedula}')">Ver</button>
+                <button class="btn btn-warning" onclick="editClient('${client.cedula}')">Editar</button>
+                <button class="btn btn-danger" onclick="deleteClient('${client.cedula}')">Eliminar</button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
 
+// Agregar event listeners para los campos de búsqueda
+document.getElementById('search-client').addEventListener('input', searchClients);
+document.getElementById('search-client-cedula').addEventListener('input', searchClients);
+
+// Agregar validación para el campo de cédula
+document.getElementById('search-client-cedula').addEventListener('input', function(e) {
+    // Eliminar caracteres no numéricos
+    this.value = this.value.replace(/[^0-9]/g, '');
+    
+    // Limitar a 11 caracteres
+    if (this.value.length > 11) {
+        this.value = this.value.slice(0, 11);
+    }
+});
     </script>
 </body>

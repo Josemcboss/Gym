@@ -373,3 +373,23 @@ table tr:hover {
     background-color: #fef3c7;
     color: #92400e;
 }
+
+/* Estilos para membresías próximas a vencer */
+.urgent-expiration {
+    background-color: #fff3cd; /* Amarillo de advertencia */
+    font-weight: bold;
+}
+
+.expiration-badge {
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.bg-danger-light {
+    background-color: #f8d7da;
+}
+
+.bg-warning-light {
+    background-color: #fff3cd;
+}

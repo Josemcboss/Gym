@@ -1067,7 +1067,18 @@ function generateId(entity) {
                 selectElement.appendChild(option);
             });
         }
-
+        function loadPaymentMembershipSelect() {
+    const data = getGymData();
+    const selectElement = document.getElementById('payment-membership');
+    selectElement.innerHTML = '<option value="">Seleccionar membresía</option>';
+    
+    data.memberships.forEach(membership => {
+        const option = document.createElement('option');
+        option.value = membership.id;
+        option.textContent = `${membership.name} ($${membership.price})`;
+        selectElement.appendChild(option);
+    });
+}
         // Load data into payment membership select
         function loadPaymentsTable() {
         const data = getGymData();

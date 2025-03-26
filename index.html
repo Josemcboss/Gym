@@ -1739,7 +1739,7 @@ document.getElementById('payment-form').addEventListener('submit', function (e) 
         // Sort by date (newest first)
         filteredAttendance.sort((a, b) => {
             const dateA = new Date(a.date + 'T' + a.time);
-            const dateB = new Date(b.date + 'T' + b.time);
+            const dateB = new Date(b.date + 'T' + a.time);
             return dateB - dateA;
         });
         

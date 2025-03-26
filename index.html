@@ -2017,46 +2017,56 @@ function getClientByCedula(cedula) {
     });
 
 // Attendance form - solo un event listener
+// Función para manejar el envío del formulario de asistencia
 document.getElementById('attendance-form').addEventListener('submit', function(event) {
     event.preventDefault();
+    const form = this; // Guardamos referencia al formulario
     
     const data = getGymData();
     const attendanceId = document.getElementById('attendance-id').value;
     
+    // Obtenemos los valores del formulario
     const attendance = {
-        client_cedula: document.getElementById('attendance-client').value, // ya es string
+        client_cedula: document.getElementById('attendance-client').value,
         date: document.getElementById('attendance-date').value,
         time: document.getElementById('attendance-time').value,
-        status: document.getElementById('attendance-status').value,
-        trainer_id: document.getElementById('attendance-trainer').value || null
+        status: document.getElementById('attendance-status').value
     };
     
+    // Añadir entrenador si está seleccionado
+    const trainerId = document.getElementById('attendance-trainer').value;
+    if (trainerId) {
+        attendance.trainer_id = parseInt(trainerId);
+    }
+    
     if (attendanceId) {
-        // Update
+        // Actualizar asistencia existente
         attendance.id = parseInt(attendanceId);
         const index = data.attendance.findIndex(a => a.id === attendance.id);
-        if (index !== -1) data.attendance[index] = attendance;
+        if (index !== -1) {
+            data.attendance[index] = attendance;
+        }
     } else {
-        // Add new
+        // Crear nueva asistencia
         attendance.id = generateId('attendance');
         data.attendance.push(attendance);
     }
     
     saveGymData(data);
-    loadAttendanceTable();
-    closeModal('attendance-modal');
-});
-        
-        // Refresh the attendance filter if it's active
-        const clientFilter = document.getElementById('attendance-client-filter').value;
-        if (clientFilter) {
-            filterAttendanceByClient(clientFilter);
-        }
-        
-        closeModal('attendance-modal');
-        this.reset();
-        document.getElementById('attendance-id').value = '';
     
+    // Actualizar la tabla según el filtro activo
+    const clientFilter = document.getElementById('attendance-client-filter').value;
+    if (clientFilter) {
+        filterAttendanceByClient(clientFilter);
+    } else {
+        loadAttendanceTable(); // Recargar toda la tabla si no hay filtro
+    }
+    
+    // Cerrar modal y resetear formulario
+    closeModal('attendance-modal');
+    form.reset(); // Usamos la referencia guardada del formulario
+    document.getElementById('attendance-id').value = '';
+});
 
     // Payment form
     document.getElementById('payment-form').addEventListener('submit', function(event) {

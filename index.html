@@ -1953,14 +1953,15 @@ function loadPaymentsTable() {
     });
 
     // Form submissions
-    // Client form
-    document.getElementById('client-form').addEventListener('submit', function(e) {
+ // Client form
+document.getElementById('client-form').addEventListener('submit', function(e) {
     e.preventDefault();
     
-    // Extraer el valor de la cédula
-    const cedula = document.getElementById('client-cedula').value.trim();
+    // Get the current data
+    const data = getGymData();
     
-    // Extraer los demás campos
+    // Extract form values
+    const cedula = document.getElementById('client-cedula').value.trim();
     const name = document.getElementById('client-name').value;
     const email = document.getElementById('client-email').value;
     const phone = document.getElementById('client-phone').value;
@@ -1969,7 +1970,7 @@ function loadPaymentsTable() {
     const membership_id = document.getElementById('client-membership').value;
     const start_date = document.getElementById('client-start-date').value;
 
-    // Crear el objeto cliente utilizando la cédula como clave primaria
+    // Create new client object
     const newClient = {
         cedula: cedula,
         name: name,
@@ -1981,32 +1982,29 @@ function loadPaymentsTable() {
         start_date: start_date
     };
     
-    data.clients.push(newClient);
+    // Check if we're editing an existing client or adding a new one
+    const existingIndex = data.clients.findIndex(c => c.cedula === cedula);
+    
+    if (existingIndex !== -1) {
+        // Update existing client
+        data.clients[existingIndex] = newClient;
+    } else {
+        // Add new client
+        data.clients.push(newClient);
+    }
+    
+    // Save the data
     saveGymData(data);
+    
+    // Refresh UI
     loadClientsTable();
-    // Opcional: cerrar el modal
+    loadClientSelect();
+    updateDashboardStats();
+    
+    // Close modal and reset form
     closeModal('client-modal');
-        
-        if (clientId) {
-            // Update existing client
-            client.id = parseInt(clientId);
-            const index = data.clients.findIndex(c => c.id === client.id);
-            if (index !== -1) {
-                data.clients[index] = client;
-            }
-        } else {
-            // Add new client
-            client.id = generateId('clients');
-            data.clients.push(client);
-        }
-        
-        saveGymData(data);
-        loadClientsTable();
-        loadClientSelect();
-        closeModal('client-modal');
-        this.reset();
-        document.getElementById('client-id').value = '';
-    });
+    this.reset();
+});
 
     // Membership form
     document.getElementById('membership-form').addEventListener('submit', function(event) {

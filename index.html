@@ -1331,86 +1331,68 @@ function saveGymData(data) {
 
     // View client details
     function viewClient(cedula) {
-        const data = getGymData();
-        const client = data.clients.find(c => c.cedula === cedula);
+    const data = getGymData();
+    const client = data.clients.find(c => c.cedula === cedula);
+    
+    if (client) {
+        const membership = getMembershipById(client.membership_id);
+        const endDate = calculateEndDate(client.start_date, membership.duration);
+        const isActive = isMembershipActive(client.start_date, membership.duration);
         
-        if (client) {
-            const membership = getMembershipById(client.membership_id);
-            const endDate = calculateEndDate(client.start_date, membership.duration);
-            const isActive = isMembershipActive(client.start_date, membership.duration);
-            
-            // Set client details
-            document.getElementById('view-client-id').textContent = client.cedula;
-            document.getElementById('view-client-name').textContent = client.name;
-            document.getElementById('view-client-email').textContent = client.email;
-            document.getElementById('view-client-phone').textContent = client.phone;
-            document.getElementById('view-client-birthdate').textContent = formatDate(client.birthdate);
-            document.getElementById('view-client-gender').textContent = 
-                client.gender === 'M' ? 'Masculino' : 
-                client.gender === 'F' ? 'Femenino' : 'Otro';
-            document.getElementById('view-client-membership').textContent = membership.name;
-            document.getElementById('view-client-start-date').textContent = formatDate(client.start_date);
-            document.getElementById('view-client-end-date').textContent = formatDate(endDate);
-            document.getElementById('view-client-status').textContent = isActive ? 'Activo' : 'Inactivo';
-            document.getElementById('client-view-name').textContent = `Cliente: ${client.name}`;
-            
-            // Load client's attendance
-            const attendanceTable = document.getElementById('client-attendance-table');
-            attendanceTable.innerHTML = '';
-            
-            data.attendance
-                .filter(a => a.client_cedula === cedula)
-                .sort((a, b) => new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time))
-                .forEach(attendance => {
-                    const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
-                    
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${attendance.id}</td>
-                        <td>${formatDateTime(attendance.date, attendance.time)}</td>
-                        <td>${trainer ? trainer.name : 'Ninguno'}</td>
-                        <td>
-                            <span class="badge ${attendance.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
-                                ${attendance.status}
-                            </span>
-                        </td>
-                    `;
-                    attendanceTable.appendChild(row);
-                });
-            
-            // Load client's payments
-            const paymentsTable = document.getElementById('client-payments-table');
-            paymentsTable.innerHTML = '';
-            
-            data.payments
-                .filter(p => p.client_id === clientId)
-                .sort((a, b) => new Date(b.date) - new Date(a.date))
-                .forEach(payment => {
-                    const membership = getMembershipById(payment.membership_id);
-                    const finalAmount = payment.amount * (1 - payment.discount / 100);
-                    
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${payment.id}</td>
-                        <td>${formatDate(payment.date)}</td>
-                        <td>${membership ? membership.name : 'Membresía eliminada'}</td>
-                        <td>$${finalAmount.toFixed(2)}</td>
-                        <td>
-                            <span class="badge ${
-                                payment.status === 'Pagado' ? 'badge-success' : 
-                                payment.status === 'Pendiente' ? 'badge-warning' : 'badge-danger'
-                            }">
-                                ${payment.status}
-                            </span>
-                        </td>
-                    `;
-                    paymentsTable.appendChild(row);
-                });
-            
-            // Show modal
-            openModal('client-view-modal');
-        }
+        // Set client details
+        document.getElementById('view-client-id').textContent = client.cedula;
+        document.getElementById('view-client-name').textContent = client.name;
+        document.getElementById('view-client-email').textContent = client.email;
+        document.getElementById('view-client-phone').textContent = client.phone;
+        document.getElementById('view-client-birthdate').textContent = formatDate(client.birthdate);
+        document.getElementById('view-client-gender').textContent = 
+            client.gender === 'M' ? 'Masculino' : 
+            client.gender === 'F' ? 'Femenino' : 'Otro';
+        document.getElementById('view-client-membership').textContent = membership.name;
+        document.getElementById('view-client-start-date').textContent = formatDate(client.start_date);
+        document.getElementById('view-client-end-date').textContent = formatDate(endDate);
+        document.getElementById('view-client-status').textContent = isActive ? 'Activo' : 'Inactivo';
+        document.getElementById('client-view-name').textContent = `Cliente: ${client.name}`;
+        
+        // Cargar pagos del cliente
+        const paymentsTable = document.getElementById('client-payments-table');
+        paymentsTable.innerHTML = '';
+
+        // 🔴 **Corrección aplicada**: Definir `clientId` correctamente
+        const clientId = client.cedula; 
+
+        data.payments
+            .filter(p => p.client_id === clientId) // Aquí `clientId` ya está definido correctamente
+            .sort((a, b) => new Date(b.date) - new Date(a.date))
+            .forEach(payment => {
+                const membership = getMembershipById(payment.membership_id);
+                const finalAmount = payment.amount * (1 - payment.discount / 100);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${payment.id}</td>
+                    <td>${formatDate(payment.date)}</td>
+                    <td>${membership ? membership.name : 'Membresía eliminada'}</td>
+                    <td>$${finalAmount.toFixed(2)}</td>
+                    <td>
+                        <span class="badge ${
+                            payment.status === 'Pagado' ? 'badge-success' : 
+                            payment.status === 'Pendiente' ? 'badge-warning' : 'badge-danger'
+                        }">
+                            ${payment.status}
+                        </span>
+                    </td>
+                `;
+                paymentsTable.appendChild(row);
+            });
+
+        // Mostrar modal
+        openModal('client-view-modal');
+    } else {
+        console.error(`Error: No se encontró el cliente con cédula ${cedula}`);
     }
+}
+
 
     // Edit client
     function editClient(cedula) {

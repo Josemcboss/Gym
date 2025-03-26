@@ -2080,43 +2080,7 @@ document.getElementById('client-form').addEventListener('submit', function(e) {
         document.getElementById('attendance-id').value = '';
     });
 
-    // Payment form
-    document.getElementById('payment-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        
-        const data = getGymData();
-        const paymentId = document.getElementById('payment-id').value;
-        
-        const payment = {
-            client_id: parseInt(document.getElementById('payment-client').value),
-            membership_id: parseInt(document.getElementById('payment-membership').value),
-            amount: parseFloat(document.getElementById('payment-amount').value),
-            discount: parseFloat(document.getElementById('payment-discount').value),
-            method: document.getElementById('payment-method').value,
-            status: document.getElementById('payment-status').value,
-            date: document.getElementById('payment-date').value
-        };
-        
-        if (paymentId) {
-            // Update existing payment
-            payment.id = parseInt(paymentId);
-            const index = data.payments.findIndex(p => p.id === payment.id);
-            if (index !== -1) {
-                data.payments[index] = payment;
-            }
-        } else {
-            // Add new payment
-            payment.id = generateId('payments');
-            data.payments.push(payment);
-        }
-        
-        saveGymData(data);
-        loadPaymentsTable();
-        closeModal('payment-modal');
-        this.reset();
-        document.getElementById('payment-id').value = '';
-    });
-
+   
     // Trainer form
     document.getElementById('trainer-form').addEventListener('submit', function(event) {
     event.preventDefault();

@@ -1026,11 +1026,12 @@ function generateId(entity) {
     return data.clients.find(client => 
         client && client.cedula && client.cedula.toString() === cedula.toString()
     ) || null;
-}
+
 
     // Asegúrate de que la cédula se compara correctamente (puede ser string vs number)
     return data.clients.find(client => client.cedula.toString() === cedula.toString());
-}
+    }
+
         // Get membership by ID
         function getMembershipById(id) {
     if (id === undefined || id === null) return null;
@@ -1307,13 +1308,7 @@ function loadPaymentsTable() {
         const client = payment.client_cedula ? getClientByCedula(payment.client_cedula) : null;
         
         // Obtener membresía con manejo seguro
-        function getMembershipById(id) {
-    const data = getGymData();
-    // Convertir ambos IDs a string para comparación segura
-    return data.memberships.find(membership => 
-        membership && membership.id && membership.id.toString() === id.toString()
-    ) || null;
-}
+        const membership = payment.membership_id ? getMembershipById(payment.membership_id) : null;
         
         // Calcular monto final con valor por defecto
         const finalAmount = payment.amount ? payment.amount * (1 - (payment.discount || 0) / 100) : 0;

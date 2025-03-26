@@ -6,7 +6,7 @@
     <title> - GymManagement</title>
     <link rel="stylesheet" href="styles.css">
     <script defer src="scripts.js"></script>
-        
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
 </head>
 
 <body>
@@ -849,6 +849,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadClientsTable();
     loadMembershipsTable();
     loadAttendanceTable();
+    loadExpiringMemberships();
     loadPaymentMembershipSelect();
     loadPaymentsTable();
     loadTrainersTable();
@@ -1922,7 +1923,111 @@ function loadPaymentsTable() {
             reportTable.appendChild(row);
         });
     }
+// Función principal para cargar membresías próximas a vencer
+function loadExpiringMemberships() {
+    const data = getGymData();
+    const tableBody = document.getElementById('expiring-memberships');
+    tableBody.innerHTML = '';
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalizar fecha
+    const nextWeek = new Date();
+    nextWeek.setDate(today.getDate() + 7);
+    nextWeek.setHours(23, 59, 59, 999);
+
+    // Obtener y procesar membresías
+    const expiringMemberships = data.clients
+        .map(client => {
+            const membership = getMembershipById(client.membership_id);
+            if (!membership || !client.start_date) return null;
+
+            const endDate = new Date(calculateEndDate(client.start_date, membership.duration));
+            endDate.setHours(0, 0, 0, 0);
+            
+            return { client, membership, endDate };
+        })
+        .filter(Boolean) // Eliminar nulos
+        .filter(item => item.endDate >= today && item.endDate <= nextWeek)
+        .sort((a, b) => a.endDate - b.endDate); // Ordenar por fecha más próxima
+
+    // Mostrar resultados
+    if (expiringMemberships.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="5" class="text-center">No hay membresías por vencer en la próxima semana</td></tr>`;
+        return;
+    }
+
+    expiringMemberships.forEach(({client, membership, endDate}) => {
+        const row = document.createElement('tr');
+        const daysLeft = Math.ceil((endDate - today) / (86400000)); // 1 día en ms
+        
+        // Resaltar si vence hoy
+        if (daysLeft === 0) {
+            row.classList.add('urgent-expiration');
+        }
+
+        row.innerHTML = `
+            <td>${client.cedula || 'N/A'}</td>
+            <td>${client.name || 'Sin nombre'}</td>
+            <td>${membership.name} (${membership.duration})</td>
+            <td>
+                ${formatDate(endDate)}
+                <span class="expiration-badge ${
+                    daysLeft <= 1 ? 'bg-danger-light' : 'bg-warning-light'
+                }">
+                    ${daysLeft === 0 ? 'Vence hoy' : `Vence en ${daysLeft} día(s)`}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-primary btn-sm" onclick="renewMembership('${client.cedula}')">
+                    Renovar
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="sendReminder('${client.cedula}')">
+                    <i class="bi bi-envelope"></i> Recordatorio
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+// Función para renovar membresía
+function renewMembership(clientCedula) {
+    const data = getGymData();
+    const client = data.clients.find(c => c.cedula === clientCedula);
+    
+    if (client) {
+        // Prellenar formulario de pago
+        document.getElementById('payment-client').value = client.cedula;
+        document.getElementById('payment-membership').value = client.membership_id;
+        document.getElementById('payment-amount').value = getMembershipById(client.membership_id).price;
+        
+        // Establecer fecha de hoy
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('payment-date').value = today;
+        
+        openModal('payment-modal');
+    } else {
+        alert('Cliente no encontrado');
+    }
+}
+
+// Función para enviar recordatorio (simulado)
+function sendReminder(clientCedula) {
+    const client = getClientByCedula(clientCedula);
+    if (client) {
+        // En una implementación real, aquí iría el código para enviar email
+        console.log(`Enviando recordatorio a ${client.email}`);
+        alert(`Se envió un recordatorio a ${client.name} (${client.email})`);
+    } else {
+        alert('Cliente no encontrado');
+    }
+}
+
+// Llamar esta función cuando se actualice el dashboard
+function updateDashboardStats() {
+    // ... otras funciones de actualización ...
+    loadExpiringMemberships();
+}
     // Modal Functions
     function openModal(modalId) {
         document.getElementById(modalId).style.display = 'block';
@@ -2141,6 +2246,7 @@ document.getElementById('client-form').addEventListener('submit', function(e) {
         document.getElementById('payment-form').addEventListener('submit', function(event) {
     event.preventDefault();
     const data = getGymData();
+    loadExpiringMemberships();
 
     // Validar campos obligatorios
     const clientId = document.getElementById('payment-client').value;
@@ -2310,6 +2416,7 @@ document.getElementById('add-payment-btn') && document.getElementById('add-payme
     document.getElementById('payment-form').reset();
     document.getElementById('payment-modal-title').textContent = 'Registrar Pago';
     openModal('payment-modal');
+    
 });
 
 // Funciones para abrir y cerrar modals

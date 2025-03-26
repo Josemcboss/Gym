@@ -870,7 +870,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!localStorage.getItem('gymData')) {
                 // Create initial data structure
                 const initialData = {
-                    clients: [],
+                    clients: [clients [{
+                id: 1,
+                cedula: "123456789", 
+                name: "Cliente Demo",
+                email: "cliente@demo.com",
+                phone: "1234567890",
+                membership_id: 1,
+                start_date: "2025-01-01"
+        }],],
                     trainers: [],
                     memberships: [
                         {

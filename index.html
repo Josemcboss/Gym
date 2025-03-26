@@ -1753,175 +1753,131 @@ document.getElementById('payment-form').addEventListener('submit', function (e) 
 
     // Generate attendance report
     function generateAttendanceReport() {
-        const clientId = document.getElementById('attendance-report-client').value;
-        const startDate = document.getElementById('attendance-report-start-date').value;
-        const endDate = document.getElementById('attendance-report-end-date').value;
-        
-        const data = getGymData();
-        let filteredAttendance = data.attendance;
-        
-        // Filter by client if selected
-        if (clientId) {
-            filteredAttendance = filteredAttendance.filter(a => a.client_cedula === parseInt(cedula));
-        }
-        
-        // Filter by date range if provided
-        if (startDate && endDate) {
-            filteredAttendance = filteredAttendance.filter(a => {
-                const attendanceDate = new Date(a.date);
-                return attendanceDate >= new Date(startDate) && attendanceDate <= new Date(endDate);
-            });
-        }
-        
-        // Sort by date
-        filteredAttendance.sort((a, b) => new Date(a.date) - new Date(b.date));
-        
-        // Generate report data
-        const reportTable = document.getElementById('attendance-report-table');
-        reportTable.innerHTML = '';
-        
-        // Group attendance by date
-        const attendanceByDate = {};
-        filteredAttendance.forEach(attendance => {
-            if (!attendanceByDate[attendance.date]) {
-                attendanceByDate[attendance.date] = 0;
-            }
-            if (attendance.status === 'Confirmada') {
-                attendanceByDate[attendance.date]++;
-            }
-        });
-        
-        // Create table rows
-        Object.keys(attendanceByDate).sort().forEach(date => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${formatDate(date)}</td>
-                <td>${attendanceByDate[date]}</td>
-            `;
-            reportTable.appendChild(row);
-        });
-        
-        // Generate summary
-        const totalAttendance = Object.values(attendanceByDate).reduce((sum, count) => sum + count, 0);
-        const uniqueDates = Object.keys(attendanceByDate).length;
-        const averageAttendance = uniqueDates > 0 ? (totalAttendance / uniqueDates).toFixed(2) : 0;
-        
-        document.getElementById('attendance-report-total').textContent = totalAttendance;
-        document.getElementById('attendance-report-average').textContent = averageAttendance;
-    }
-
-    // Generate income report
-    function generateIncomeReport() {
-    const dateRange = document.getElementById('income-date-range').value;
-    const membershipType = document.getElementById('income-membership-type').value;
-    const paymentMethod = document.getElementById('income-payment-method').value;
+    const clientId = document.getElementById('attendance-report-client').value;
+    const dateFrom = document.getElementById('attendance-report-date-from').value;
+    const dateTo = document.getElementById('attendance-report-date-to').value;
     
     const data = getGymData();
-    let filteredPayments = data.payments.filter(p => p.status === 'Pagado');
+    let filteredAttendance = [...data.attendance];
     
-    // Filtrar por tipo de membresía si se seleccionó
-    if (membershipType) {
-        filteredPayments = filteredPayments.filter(p => p.membership_id == membershipType);
+    // Aplicar filtros
+    if (clientId) {
+        filteredAttendance = filteredAttendance.filter(a => a.client_cedula === clientId);
     }
     
-    // Filtrar por método de pago si se seleccionó
-    if (paymentMethod) {
-        filteredPayments = filteredPayments.filter(p => p.method === paymentMethod);
+    if (dateFrom && dateTo) {
+        filteredAttendance = filteredAttendance.filter(a => {
+            const attendanceDate = new Date(a.date);
+            return attendanceDate >= new Date(dateFrom) && 
+                   attendanceDate <= new Date(dateTo);
+        });
     }
     
-    // Filtrar por rango de fechas
-    const today = new Date();
-    let startDate, endDate;
+    // Ordenar por fecha
+    filteredAttendance.sort((a, b) => new Date(b.date) - new Date(a.date));
     
-    switch(dateRange) {
-        case 'day':
-            startDate = new Date(today);
-            endDate = new Date(today);
-            break;
-        case 'week':
-            startDate = new Date(today);
-            startDate.setDate(today.getDate() - today.getDay()); // Domingo de esta semana
-            endDate = new Date(today);
-            endDate.setDate(today.getDate() + (6 - today.getDay())); // Sábado de esta semana
-            break;
-        case 'month':
-            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-            endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-            break;
-        case 'year':
-            startDate = new Date(today.getFullYear(), 0, 1);
-            endDate = new Date(today.getFullYear(), 11, 31);
-            break;
+    // Generar reporte
+    const tableBody = document.getElementById('attendance-report-table');
+    tableBody.innerHTML = '';
+    
+    if (filteredAttendance.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron registros</td></tr>';
+        return;
     }
     
-    filteredPayments = filteredPayments.filter(p => {
-        const paymentDate = new Date(p.date);
-        return paymentDate >= startDate && paymentDate <= endDate;
+    filteredAttendance.forEach(attendance => {
+        const client = getClientByCedula(attendance.client_cedula);
+        const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
+        const membership = client ? getMembershipById(client.membership_id) : null;
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${attendance.id}</td>
+            <td>${formatDateTime(attendance.date, attendance.time)}</td>
+            <td>${client ? client.name : 'Cliente no encontrado'}</td>
+            <td>${trainer ? trainer.name : 'Sin entrenador'}</td>
+            <td>${membership ? membership.name : 'N/A'}</td>
+            <td>
+                <span class="badge ${attendance.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
+                    ${attendance.status}
+                </span>
+            </td>
+        `;
+        tableBody.appendChild(row);
     });
 }
 
-    // Generate membership report
-    function generateMembershipReport() {
-        const membershipId = document.getElementById('membership-report-type').value;
+    // Generate income report
+    function generateIncomeReport() {
+        const dateRange = document.getElementById('income-date-range').value;
+        const membershipType = document.getElementById('income-membership-type').value;
+        const paymentMethod = document.getElementById('income-payment-method').value;
         
         const data = getGymData();
-        let filteredClients = data.clients;
+        let filteredPayments = data.payments.filter(p => p.status === 'Pagado');
         
-        // Filter by membership if selected
-        if (membershipId) {
-            filteredClients = filteredClients.filter(c => c.membership_id === parseInt(membershipId));
+        // Calcular rango de fechas
+        const today = new Date();
+        let startDate, endDate;
+        
+        switch(dateRange) {
+            case 'day':
+                startDate = new Date(today.setHours(0,0,0,0));
+                endDate = new Date(today.setHours(23,59,59,999));
+                break;
+            case 'week':
+                startDate = new Date(today.setDate(today.getDate() - today.getDay()));
+                endDate = new Date(today.setDate(today.getDate() + 6));
+                break;
+            case 'month':
+                startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                break;
+            case 'year':
+                startDate = new Date(today.getFullYear(), 0, 1);
+                endDate = new Date(today.getFullYear(), 11, 31);
+                break;
         }
         
-        // Count active and inactive clients
-        const activeMemberships = filteredClients.filter(client => {
-            const membership = getMembershipById(client.membership_id);
-            return isMembershipActive(client.start_date, membership.duration);
+        // Aplicar filtros
+        filteredPayments = filteredPayments.filter(payment => {
+            const paymentDate = new Date(payment.date);
+            const matchesDate = paymentDate >= startDate && paymentDate <= endDate;
+            const matchesMembership = !membershipType || payment.membership_id.toString() === membershipType;
+            const matchesMethod = !paymentMethod || payment.method === paymentMethod;
+            
+            return matchesDate && matchesMembership && matchesMethod;
         });
         
-        const inactiveMemberships = filteredClients.filter(client => {
-            const membership = getMembershipById(client.membership_id);
-            return !isMembershipActive(client.start_date, membership.duration);
-        });
+        // Generar reporte
+        const tableBody = document.getElementById('income-report-table');
+        tableBody.innerHTML = '';
+        let totalIncome = 0;
         
-        // Generate report data
-        const reportTable = document.getElementById('membership-report-table');
-        reportTable.innerHTML = '';
-        
-        // Group clients by membership type
-        const clientsByMembership = {};
-        filteredClients.forEach(client => {
-            const membership = getMembershipById(client.membership_id);
-            if (!membership) return;
+        filteredPayments.forEach(payment => {
+            const client = getClientByCedula(payment.client_cedula);
+            const membership = getMembershipById(payment.membership_id);
+            const finalAmount = payment.amount * (1 - (payment.discount || 0) / 100);
             
-            if (!clientsByMembership[membership.id]) {
-                clientsByMembership[membership.id] = {
-                    name: membership.name,
-                    active: 0,
-                    inactive: 0,
-                    total: 0
-                };
-            }
-            
-            clientsByMembership[membership.id].total++;
-            
-            if (isMembershipActive(client.start_date, membership.duration)) {
-                clientsByMembership[membership.id].active++;
-            } else {
-                clientsByMembership[membership.id].inactive++;
-            }
-        });
-        
-        // Create table rows
-        Object.values(clientsByMembership).forEach(membershipData => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${membershipData.name}</td>
-                <td>${membershipData.active}</td>
-                <td>${membershipData.inactive}</td>
-                <td>${membershipData.total}</td>
+                <td>${payment.client_cedula}</td>
+                <td>${formatDate(payment.date)}</td>
+                <td>${client ? client.name : 'Cliente no encontrado'}</td>
+                <td>${membership ? membership.name : 'Membresía no encontrada'}</td>
+                <td>$${payment.amount.toFixed(2)}</td>
+                <td>${payment.discount || 0}%</td>
+                <td>$${finalAmount.toFixed(2)}</td>
+                <td>${payment.method}</td>
+                <td><span class="badge badge-success">${payment.status}</span></td>
             `;
-            reportTable.appendChild(row);
+            tableBody.appendChild(row);
+            totalIncome += finalAmount;
         });
+        
+        document.getElementById('income-total').innerHTML = `<strong>$${totalIncome.toFixed(2)}</strong>`;
+    
+
         
         // Generate summary
         document.getElementById('membership-report-active').textContent = activeMemberships.length;
@@ -1929,58 +1885,186 @@ document.getElementById('payment-form').addEventListener('submit', function (e) 
         document.getElementById('membership-report-total').textContent = filteredClients.length;
     }
 
+    function generateMembershipReport() {
+    const status = document.getElementById('membership-report-status').value;
+    const type = document.getElementById('membership-report-type').value;
+    
+    const data = getGymData();
+    let filteredClients = [...data.clients];
+    
+    // Aplicar filtros
+    filteredClients = filteredClients.filter(client => {
+        const membership = getMembershipById(client.membership_id);
+        if (!membership) return false;
+        
+        const isActive = isMembershipActive(client.start_date, membership.duration);
+        const matchesStatus = !status || 
+            (status === 'Activo' && isActive) || 
+            (status === 'Inactivo' && !isActive);
+        const matchesType = !type || membership.id.toString() === type;
+        
+        return matchesStatus && matchesType;
+    });
+    
+    // Generar reporte
+    const tableBody = document.getElementById('membership-report-table');
+    tableBody.innerHTML = '';
+    
+    if (filteredClients.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron registros</td></tr>';
+        return;
+    }
+    
+    filteredClients.forEach(client => {
+        const membership = getMembershipById(client.membership_id);
+        const isActive = isMembershipActive(client.start_date, membership.duration);
+        const lastAttendance = getLastAttendance(client.cedula);
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${client.cedula}</td>
+            <td>${client.name}</td>
+            <td>${membership.name}</td>
+            <td>${formatDate(client.start_date)}</td>
+            <td>
+                <span class="badge ${isActive ? 'badge-success' : 'badge-danger'}">
+                    ${isActive ? 'Activo' : 'Inactivo'}
+                </span>
+            </td>
+            <td>${lastAttendance ? formatDateTime(lastAttendance.date, lastAttendance.time) : 'Nunca'}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+// Función auxiliar para obtener la última asistencia
+function getLastAttendance(cedula) {
+    const data = getGymData();
+    return data.attendance
+        .filter(a => a.client_cedula === cedula && a.status === 'Confirmada')
+        .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+}
+
+
     // Generate trainer report
     function generateTrainerReport() {
-        const trainerId = document.getElementById('trainer-report-trainer').value;
-        
-        const data = getGymData();
-        let filteredTrainers = data.trainers;
-        
-        // Filter by trainer if selected
-        if (trainerId) {
-            filteredTrainers = filteredTrainers.filter(t => t.id === parseInt(trainerId));
-        }
-        
-        // Generate report data
-        const reportTable = document.getElementById('trainer-report-table');
-        reportTable.innerHTML = '';
-        
-        filteredTrainers.forEach(trainer => {
-            // Count assigned clients
-            const assignedClients = new Set();
-            data.attendance.forEach(attendance => {
-                if (attendance.trainer_id === trainer.id) {
-                    assignedClients.add(attendance.client_id);
-                }
-            });
-            
-            // Count completed sessions
-            const completedSessions = data.attendance.filter(
-                a => a.trainer_id === trainer.id && a.status === 'Confirmada'
-            ).length;
-            
-            // Find last session
-            const trainerSessions = data.attendance.filter(a => a.trainer_id === trainer.id);
-            let lastSession = 'Ninguna';
-            
-            if (trainerSessions.length > 0) {
-                const sortedSessions = trainerSessions.sort((a, b) => {
-                    return new Date(b.date + 'T' + b.time) - new Date(a.date + 'T' + a.time);
-                });
-                lastSession = formatDateTime(sortedSessions[0].date, sortedSessions[0].time);
-            }
-            
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${trainer.id}</td>
-                <td>${trainer.name}</td>
-                <td>${assignedClients.size}</td>
-                <td>${completedSessions}</td>
-                <td>${lastSession}</td>
-            `;
-            reportTable.appendChild(row);
-        });
+    // Obtener el valor del filtro
+    const trainerId = document.getElementById('trainer-report-trainer').value;
+    
+    // Obtener los datos del gimnasio
+    const data = getGymData();
+    let filteredTrainers = data.trainers;
+    
+    // Aplicar filtro si existe
+    if (trainerId) {
+        filteredTrainers = filteredTrainers.filter(t => t.id == trainerId);
     }
+    
+    // Generar la tabla de resultados
+    const tableBody = document.getElementById('trainer-report-table');
+    tableBody.innerHTML = '';
+    
+    filteredTrainers.forEach(trainer => {
+        // Calcular métricas para cada entrenador
+        const assignedClients = new Set();
+        let sessionsCount = 0;
+        let lastSession = null;
+        
+        data.attendance.forEach(attendance => {
+            if (attendance.trainer_id === trainer.id) {
+                assignedClients.add(attendance.client_cedula);
+                sessionsCount++;
+                
+                const sessionDate = new Date(attendance.date + 'T' + attendance.time);
+                if (!lastSession || sessionDate > new Date(lastSession.date + 'T' + lastSession.time)) {
+                    lastSession = attendance;
+                }
+            }
+        });
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${trainer.id}</td>
+            <td>${trainer.name}</td>
+            <td>${assignedClients.size}</td>
+            <td>${sessionsCount}</td>
+            <td>${lastSession ? formatDateTime(lastSession.date, lastSession.time) : 'Ninguna'}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+// Event listeners para los botones de reportes
+document.getElementById('generate-income-report').addEventListener('click', generateIncomeReport);
+document.getElementById('generate-attendance-report').addEventListener('click', generateAttendanceReport);
+document.getElementById('generate-membership-report').addEventListener('click', generateMembershipReport);
+// Obtiene los datos del gimnasio desde localStorage
+function getGymData() {
+    return JSON.parse(localStorage.getItem('gymData')) || {
+        clients: [],
+        trainers: [],
+        memberships: [],
+        attendance: [],
+        payments: []
+    };
+}
+
+// Formatea una fecha como string (ej: "01/01/2023")
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString();
+}
+
+// Formatea fecha y hora (ej: "01/01/2023 10:30 AM")
+function formatDateTime(dateString, timeString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    if (timeString) {
+        const [hours, minutes] = timeString.split(':');
+        date.setHours(hours, minutes);
+    }
+    return date.toLocaleString();
+}
+
+// Calcula la fecha de finalización de una membresía
+function calculateEndDate(startDate, duration) {
+    const date = new Date(startDate);
+    
+    switch(duration) {
+        case 'mensual': date.setMonth(date.getMonth() + 1); break;
+        case 'trimestral': date.setMonth(date.getMonth() + 3); break;
+        case 'semestral': date.setMonth(date.getMonth() + 6); break;
+        case 'anual': date.setFullYear(date.getFullYear() + 1); break;
+    }
+    
+    return date.toISOString().split('T')[0];
+}
+
+// Verifica si una membresía está activa
+function isMembershipActive(startDate, duration) {
+    const endDate = new Date(calculateEndDate(startDate, duration));
+    return new Date() <= endDate;
+}
+
+// Obtiene un cliente por su cédula
+function getClientByCedula(cedula) {
+    const data = getGymData();
+    return data.clients.find(client => client.cedula === cedula);
+}
+
+// Obtiene una membresía por su ID
+function getMembershipById(id) {
+    const data = getGymData();
+    return data.memberships.find(membership => membership.id == id);
+}
+
+// Obtiene un entrenador por su ID
+function getTrainerById(id) {
+    const data = getGymData();
+    return data.trainers.find(trainer => trainer.id == id);
+}
+
+
 // Función principal para cargar membresías próximas a vencer
 function loadExpiringMemberships() {
     const data = getGymData();
@@ -2650,23 +2734,5 @@ function updateDashboardStats() {
     document.getElementById('monthly-income').textContent = `$${monthlyIncome.toFixed(2)}`;
 }
 
-    // Reporte de Ingresos
-document.getElementById('generate-income-report')?.addEventListener('click', function() {
-    generateIncomeReport();
-});
-
-// Reporte de Asistencia
-document.getElementById('generate-attendance-report')?.addEventListener('click', function() {
-    generateAttendanceReport();
-});
-
-// Reporte de Membresías
-document.getElementById('generate-membership-report')?.addEventListener('click', function() {
-    generateMembershipReport();
-});
-
-// Reporte de Entrenadores
-document.getElementById('generate-trainer-report')?.addEventListener('click', function() {
-    generateTrainerReport();
-});
     </script>
+</body>

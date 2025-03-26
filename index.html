@@ -1769,50 +1769,185 @@ document.getElementById('payment-form').addEventListener('submit', function (e) 
 });
 
     // Filter attendance by client
-    function filterAttendanceByClient(clientId) {
-        const data = getGymData();
-        const tableBody = document.getElementById('attendance-table');
-        tableBody.innerHTML = '';
-        
-        let filteredAttendance = data.attendance;
-        
-        if (clientId) {
-            filteredAttendance = data.attendance.filter(a => 
-        a.client_cedula.toString() === cedula.toString()
+// Filter attendance by client
+function filterAttendanceByClient(clientId) {
+    const data = getGymData();
+    const tableBody = document.getElementById('attendance-table');
+    tableBody.innerHTML = '';
+    
+    let filteredAttendance = data.attendance;
+    
+    if (clientId) {
+        // Fix: Use clientId parameter instead of undefined cedula variable
+        filteredAttendance = data.attendance.filter(a => 
+            a.client_cedula.toString() === clientId.toString()
         );
-        }
-        
-        // Sort by date (newest first)
-        filteredAttendance.sort((a, b) => {
-            const dateA = new Date(a.date + 'T' + a.time);
-            const dateB = new Date(b.date + 'T' + a.time);
-            return dateB - dateA;
-        });
-        
-        filteredAttendance.forEach(attendance => {
-            const client = getClientByCedula(attendance.client_cedula);
-            const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
-            
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${attendance.id}</td>
-                <td>${client ? client.name : 'Cliente eliminado'}</td>
-                <td>${formatDateTime(attendance.date, attendance.time)}</td>
-                <td>${trainer ? trainer.name : 'Ninguno'}</td>
-                <td>
-                    <span class="badge ${attendance.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
-                        ${attendance.status}
-                    </span>
-                </td>
-                <td>
-                    <button class="btn btn-warning" onclick="editAttendance(${attendance.id})">Editar</button>
-                    <button class="btn btn-danger" onclick="deleteAttendance(${attendance.id})">Eliminar</button>
-                </td>
-            `;
-            tableBody.appendChild(row);
-        });
     }
+    
+    // Sort by date (newest first)
+    filteredAttendance.sort((a, b) => {
+        const dateA = new Date(`${a.date}T${a.time}`);
+        const dateB = new Date(`${b.date}T${b.time}`);
+        return dateB - dateA;
+    });
+    
+    filteredAttendance.forEach(attendance => {
+        const client = getClientByCedula(attendance.client_cedula);
+        const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${attendance.client_cedula}</td>
+            <td>${client ? client.name : 'Cliente eliminado'}</td>
+            <td>${formatDateTime(attendance.date, attendance.time)}</td>
+            <td>${trainer ? trainer.name : 'Ninguno'}</td>
+            <td>
+                <span class="badge ${attendance.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
+                    ${attendance.status}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-warning" onclick="editAttendance(${attendance.id})">Editar</button>
+                <button class="btn btn-danger" onclick="deleteAttendance(${attendance.id})">Eliminar</button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+    const NotificationSystem = {
+    show: function(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                ${message}
+                <button class="notification-close">&times;</button>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    },
+    
+    success: function(message) {
+        this.show(message, 'success');
+    },
+    
+    error: function(message) {
+        this.show(message, 'error');
+    },
+    
+    warning: function(message) {
+        this.show(message, 'warning');
+    }
+};
+const BackupSystem = {
+    createBackup: function() {
+        const data = getGymData();
+        const backup = {
+            data: data,
+            timestamp: new Date().toISOString(),
+            version: '1.0'
+        };
+        
+        const blob = new Blob([JSON.stringify(backup)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `gym_backup_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+    },
+    
+    restoreBackup: function(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const backup = JSON.parse(e.target.result);
+                localStorage.setItem('gymData', JSON.stringify(backup.data));
+                NotificationSystem.success('Respaldo restaurado exitosamente');
+                location.reload();
+            } catch (error) {
+                NotificationSystem.error('Error al restaurar el respaldo');
+            }
+        };
+        reader.readAsText(file);
+    }
+};
+function generateAdvancedStats() {
+    const data = getGymData();
+    const stats = {
+        memberships: {
+            active: 0,
+            expired: 0,
+            distribution: {}
+        },
+        attendance: {
+            daily: {},
+            weekly: {},
+            monthly: {}
+        },
+        revenue: {
+            total: 0,
+            byMembership: {},
+            byMonth: {}
+        }
+    };
+    
+    // Calculate stats...
+    
+    return stats;
+}
+function addExerciseRoutine(clientId, routine) {
+    const data = getGymData();
+    if (!data.routines) data.routines = {};
+    
+    data.routines[clientId] = {
+        exercises: routine.exercises,
+        startDate: routine.startDate,
+        endDate: routine.endDate,
+        trainer: routine.trainer,
+        progress: []
+    };
+    
+    saveGymData(data);
+}
+function logChange(action, details) {
+    const data = getGymData();
+    if (!data.changelog) data.changelog = [];
+    
+    data.changelog.push({
+        action,
+        details,
+        timestamp: new Date().toISOString(),
+        user: 'admin' // Implementar sistema de usuarios
+    });
+    
+    saveGymData(data);
+}
+function validateEmail(email) {
+    const regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+    return regex.test(email);
+}
 
+document.getElementById('client-email').addEventListener('input', function() {
+    const isValid = validateEmail(this.value);
+    this.classList.toggle('invalid', !isValid && this.value.length > 0);
+});
+function advancedSearch(criteria) {
+    const data = getGymData();
+    return data.clients.filter(client => {
+        return Object.entries(criteria).every(([key, value]) => {
+            if (!value) return true;
+            if (typeof value === 'string') {
+                return client[key].toLowerCase().includes(value.toLowerCase());
+            }
+            return client[key] === value;
+        });
+    });
+}
     // Handle attendance filter change
     document.getElementById('attendance-client-filter').addEventListener('change', function() {
         filterAttendanceByClient(this.value);
@@ -1839,7 +1974,96 @@ document.getElementById('payment-form').addEventListener('submit', function (e) 
                    attendanceDate <= new Date(dateTo);
         });
     }
+    // Add event listener for the payments filter button
+document.getElementById('filter-payments-btn').addEventListener('click', filterPayments);
+
+function filterPayments() {
+    const dateFrom = document.getElementById('payment-date-from').value;
+    const dateTo = document.getElementById('payment-date-to').value;
+    const status = document.getElementById('payment-status-filter').value;
     
+    const data = getGymData();
+    let filteredPayments = [...data.payments];
+    
+    // Filter by date range
+    if (dateFrom && dateTo) {
+        filteredPayments = filteredPayments.filter(payment => {
+            const paymentDate = new Date(payment.date);
+            const fromDate = new Date(dateFrom);
+            const toDate = new Date(dateTo);
+            
+            // Set hours to compare only dates
+            fromDate.setHours(0, 0, 0, 0);
+            toDate.setHours(23, 59, 59, 999);
+            paymentDate.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
+            
+            return paymentDate >= fromDate && paymentDate <= toDate;
+        });
+    }
+    
+    // Filter by status
+    if (status) {
+        filteredPayments = filteredPayments.filter(payment => payment.status === status);
+    }
+    
+    // Sort by most recent first
+    filteredPayments.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // Update table
+    const tableBody = document.getElementById('payments-table');
+    tableBody.innerHTML = '';
+    
+    if (filteredPayments.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="8" class="text-center">No se encontraron pagos</td></tr>';
+        return;
+    }
+    
+    filteredPayments.forEach(payment => {
+        const client = getClientByCedula(payment.client_cedula);
+        const membership = getMembershipById(payment.membership_id);
+        const finalAmount = payment.amount * (1 - (payment.discount || 0) / 100);
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${payment.client_cedula}</td>
+            <td>${client ? client.name : 'Cliente no encontrado'}</td>
+            <td>${membership ? membership.name : 'Membresía no encontrada'}</td>
+            <td>$${finalAmount.toFixed(2)}</td>
+            <td>${payment.method}</td>
+            <td>
+                <span class="badge ${
+                    payment.status === 'Pagado' ? 'badge-success' : 
+                    payment.status === 'Pendiente' ? 'badge-warning' : 'badge-danger'
+                }">
+                    ${payment.status}
+                </span>
+            </td>
+            <td>${formatDate(payment.date)}</td>
+            <td>
+                <button class="btn btn-warning" onclick="editPayment(${payment.id})">Editar</button>
+                <button class="btn btn-danger" onclick="deletePayment(${payment.id})">Eliminar</button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+// Add validation for date inputs
+document.getElementById('payment-date-from').addEventListener('change', validatePaymentDateRange);
+document.getElementById('payment-date-to').addEventListener('change', validatePaymentDateRange);
+
+function validatePaymentDateRange() {
+    const dateFrom = document.getElementById('payment-date-from');
+    const dateTo = document.getElementById('payment-date-to');
+    
+    if (dateFrom.value && dateTo.value) {
+        if (new Date(dateFrom.value) > new Date(dateTo.value)) {
+            alert('La fecha inicial no puede ser mayor que la fecha final');
+            dateFrom.value = '';
+            dateTo.value = '';
+        }
+    }
+}
     // Ordenar por fecha
     filteredAttendance.sort((a, b) => new Date(b.date) - new Date(a.date));
     
@@ -1973,7 +2197,136 @@ document.getElementById('payment-form').addEventListener('submit', function (e) 
     }
     }
 }
+function exportReport(type) {
+    const tableData = [];
+    let filename = '';
+    
+    switch(type) {
+        case 'attendance':
+            const attendanceTable = document.getElementById('attendance-report-table');
+            filename = 'reporte_asistencia.csv';
+            // Convertir tabla a CSV
+            break;
+        case 'income':
+            const incomeTable = document.getElementById('income-report-table');
+            filename = 'reporte_ingresos.csv';
+            break;
+        case 'membership':
+            const membershipTable = document.getElementById('membership-report-table');
+            filename = 'reporte_membresias.csv';
+            break;
+    }
+    
+    // Crear y descargar el archivo CSV
+    const csvContent = "data:text/csv;charset=utf-8," + tableData.join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+}
+function validateMembershipDates(startDate, endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const today = new Date();
 
+    if (start > end) {
+        return {
+            isValid: false,
+            message: 'La fecha de inicio debe ser anterior a la fecha de fin'
+        };
+    }
+
+    if (start < today && !confirm('¿Desea registrar una membresía con fecha pasada?')) {
+        return {
+            isValid: false,
+            message: 'Operación cancelada'
+        };
+    }
+
+    return { isValid: true };
+}
+function checkExpiringMemberships() {
+    const data = getGymData();
+    const today = new Date();
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    data.clients.forEach(client => {
+        const membership = getMembershipById(client.membership_id);
+        const endDate = new Date(calculateEndDate(client.start_date, membership.duration));
+        
+        if (endDate >= today && endDate <= nextWeek) {
+            // Mostrar notificación
+            NotificationSystem.warning(
+                `La membresía de ${client.name} vence el ${formatDate(endDate)}`
+            );
+        }
+    });
+}
+function advancedFilter(data, filters) {
+    return data.filter(item => {
+        return Object.entries(filters).every(([key, value]) => {
+            if (!value) return true;
+            
+            if (key.includes('date')) {
+                const itemDate = new Date(item[key]);
+                const filterDate = new Date(value);
+                return itemDate.toDateString() === filterDate.toDateString();
+            }
+            
+            if (typeof value === 'string') {
+                return item[key].toLowerCase().includes(value.toLowerCase());
+            }
+            
+            return item[key] === value;
+        });
+    });
+}
+function logActivity(action, details) {
+    const data = getGymData();
+    if (!data.activityLog) data.activityLog = [];
+    
+    data.activityLog.push({
+        timestamp: new Date().toISOString(),
+        action,
+        details,
+        user: 'admin' // Para futura implementación de usuarios
+    });
+    
+    saveGymData(data);
+}
+function updateMembershipStatus() {
+    const data = getGymData();
+    const today = new Date();
+    
+    data.clients.forEach(client => {
+        const membership = getMembershipById(client.membership_id);
+        const endDate = new Date(calculateEndDate(client.start_date, membership.duration));
+        
+        if (endDate < today && !client.statusNotified) {
+            NotificationSystem.warning(
+                `La membresía de ${client.name} ha expirado`
+            );
+            client.statusNotified = true;
+            saveGymData(data);
+        }
+    });
+}
+function handleError(error, context) {
+    console.error(`Error en ${context}:`, error);
+    
+    NotificationSystem.error(
+        `Ha ocurrido un error: ${error.message || 'Error desconocido'}`
+    );
+    
+    // Log del error
+    logActivity('error', {
+        context,
+        message: error.message,
+        stack: error.stack
+    });
+}
     function generateMembershipReport() {
     const status = document.getElementById('membership-report-status').value;
     const type = document.getElementById('membership-report-type').value;

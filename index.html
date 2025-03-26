@@ -1812,72 +1812,53 @@ document.getElementById('payment-form').addEventListener('submit', function (e) 
 
     // Generate income report
     function generateIncomeReport() {
-        const membershipId = document.getElementById('income-membership-type').value;
-        const startDate = document.getElementById('income-report-start-date').value;
-        const endDate = document.getElementById('income-report-end-date').value;
-        
-        const data = getGymData();
-        let filteredPayments = data.payments;
-        
-        // Filter by membership if selected
-        if (membershipId) {
-            filteredPayments = filteredPayments.filter(p => p.membership_id === parseInt(membershipId));
-        }
-        
-        // Filter by date range if provided
-        if (startDate && endDate) {
-            filteredPayments = filteredPayments.filter(p => {
-                const paymentDate = new Date(p.date);
-                return paymentDate >= new Date(startDate) && paymentDate <= new Date(endDate);
-            });
-        }
-        
-        // Filter by status (only count paid payments)
-        filteredPayments = filteredPayments.filter(p => p.status === 'Pagado');
-        
-        // Sort by date
-        filteredPayments.sort((a, b) => new Date(a.date) - new Date(b.date));
-        
-        // Generate report data
-        const reportTable = document.getElementById('income-report-table');
-        reportTable.innerHTML = '';
-        
-        // Group payments by month
-        const paymentsByMonth = {};
-        filteredPayments.forEach(payment => {
-            const date = new Date(payment.date);
-            const monthYear = `${date.getFullYear()}-${date.getMonth() + 1}`;
-            
-            if (!paymentsByMonth[monthYear]) {
-                paymentsByMonth[monthYear] = 0;
-            }
-            
-            const finalAmount = payment.amount * (1 - payment.discount / 100);
-            paymentsByMonth[monthYear] += finalAmount;
-        });
-        
-        // Create table rows
-        Object.keys(paymentsByMonth).sort().forEach(monthYear => {
-            const [year, month] = monthYear.split('-');
-            const date = new Date(year, month - 1, 1);
-            const monthName = date.toLocaleString('default', { month: 'long' });
-            
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${monthName} ${year}</td>
-                <td>$${paymentsByMonth[monthYear].toFixed(2)}</td>
-            `;
-            reportTable.appendChild(row);
-        });
-        
-        // Generate summary
-        const totalIncome = Object.values(paymentsByMonth).reduce((sum, amount) => sum + amount, 0);
-        const uniqueMonths = Object.keys(paymentsByMonth).length;
-        const averageIncome = uniqueMonths > 0 ? (totalIncome / uniqueMonths).toFixed(2) : 0;
-        
-        document.getElementById('income-report-total').textContent = `$${totalIncome.toFixed(2)}`;
-        document.getElementById('income-report-average').textContent = `$${averageIncome}`;
+    const dateRange = document.getElementById('income-date-range').value;
+    const membershipType = document.getElementById('income-membership-type').value;
+    const paymentMethod = document.getElementById('income-payment-method').value;
+    
+    const data = getGymData();
+    let filteredPayments = data.payments.filter(p => p.status === 'Pagado');
+    
+    // Filtrar por tipo de membresía si se seleccionó
+    if (membershipType) {
+        filteredPayments = filteredPayments.filter(p => p.membership_id == membershipType);
     }
+    
+    // Filtrar por método de pago si se seleccionó
+    if (paymentMethod) {
+        filteredPayments = filteredPayments.filter(p => p.method === paymentMethod);
+    }
+    
+    // Filtrar por rango de fechas
+    const today = new Date();
+    let startDate, endDate;
+    
+    switch(dateRange) {
+        case 'day':
+            startDate = new Date(today);
+            endDate = new Date(today);
+            break;
+        case 'week':
+            startDate = new Date(today);
+            startDate.setDate(today.getDate() - today.getDay()); // Domingo de esta semana
+            endDate = new Date(today);
+            endDate.setDate(today.getDate() + (6 - today.getDay())); // Sábado de esta semana
+            break;
+        case 'month':
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            break;
+        case 'year':
+            startDate = new Date(today.getFullYear(), 0, 1);
+            endDate = new Date(today.getFullYear(), 11, 31);
+            break;
+    }
+    
+    filteredPayments = filteredPayments.filter(p => {
+        const paymentDate = new Date(p.date);
+        return paymentDate >= startDate && paymentDate <= endDate;
+    });
+}
 
     // Generate membership report
     function generateMembershipReport() {
@@ -2668,5 +2649,24 @@ function updateDashboardStats() {
     document.getElementById('trainers-count').textContent = trainersCount;
     document.getElementById('monthly-income').textContent = `$${monthlyIncome.toFixed(2)}`;
 }
-    </script>
 
+    // Reporte de Ingresos
+document.getElementById('generate-income-report')?.addEventListener('click', function() {
+    generateIncomeReport();
+});
+
+// Reporte de Asistencia
+document.getElementById('generate-attendance-report')?.addEventListener('click', function() {
+    generateAttendanceReport();
+});
+
+// Reporte de Membresías
+document.getElementById('generate-membership-report')?.addEventListener('click', function() {
+    generateMembershipReport();
+});
+
+// Reporte de Entrenadores
+document.getElementById('generate-trainer-report')?.addEventListener('click', function() {
+    generateTrainerReport();
+});
+    </script>

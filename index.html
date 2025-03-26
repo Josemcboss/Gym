@@ -853,6 +853,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadPaymentMembershipSelect();
     loadPaymentsTable();
     loadTrainersTable();
+    loadRecentAttendance();
     
     // Load all select elements
     loadClientSelect();
@@ -2064,6 +2065,112 @@ function updateDashboardStats() {
         });
     });
 
+    function loadRecentAttendance() {
+    const data = getGymData();
+    const tableBody = document.getElementById('recent-attendance');
+    tableBody.innerHTML = '';
+
+    // Ordenar por fecha más reciente primero
+    const sortedAttendance = [...data.attendance].sort((a, b) => {
+        const dateA = new Date(`${a.date}T${a.time}`);
+        const dateB = new Date(`${b.date}T${b.time}`);
+        return dateB - dateA;
+    }).slice(0, 10); // Mostrar solo las 10 más recientes
+
+    if (sortedAttendance.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="5" class="text-center">No hay registros de asistencia recientes</td></tr>`;
+        return;
+    }
+
+    sortedAttendance.forEach(attendance => {
+        const client = getClientByCedula(attendance.client_cedula);
+        const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
+        const attendanceDate = new Date(`${attendance.date}T${attendance.time}`);
+        
+        // Calcular tiempo transcurrido
+        const now = new Date();
+        const hoursDiff = Math.floor((now - attendanceDate) / (1000 * 60 * 60));
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${attendance.client_cedula}</td>
+            <td>${client ? client.name : 'Cliente no encontrado'}</td>
+            <td>
+                ${formatDateTime(attendance.date, attendance.time)}
+                ${hoursDiff < 24 ? `<span class="badge bg-success">Hoy</span>` : ''}
+            </td>
+            <td>${trainer ? trainer.name : 'Sin entrenador'}</td>
+            <td>
+                <span class="badge ${
+                    attendance.status === 'Confirmada' ? 'bg-success' : 'bg-danger'
+                }">
+                    ${attendance.status}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-outline-primary btn-sm" onclick="viewAttendanceDetails(${attendance.id})">
+                    <i class="bi bi-eye"></i>
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+function viewAttendanceDetails(attendanceId) {
+    const data = getGymData();
+    const attendance = data.attendance.find(a => a.id === attendanceId);
+    
+    if (!attendance) {
+        alert('Registro de asistencia no encontrado');
+        return;
+    }
+
+    const client = getClientByCedula(attendance.client_cedula);
+    const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
+    const membership = client ? getMembershipById(client.membership_id) : null;
+
+    // Crear contenido del modal (puedes usar un modal existente o crear uno nuevo)
+    const modalContent = `
+        <div class="modal-header">
+            <h5 class="modal-title">Detalles de Asistencia</h5>
+            <button type="button" class="btn-close" data-close="attendance-details-modal"></button>
+        </div>
+        <div class="modal-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <p><strong>Cliente:</strong> ${client ? client.name : 'N/A'}</p>
+                    <p><strong>Cédula:</strong> ${attendance.client_cedula}</p>
+                    <p><strong>Membresía:</strong> ${membership ? membership.name : 'N/A'}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Fecha/Hora:</strong> ${formatDateTime(attendance.date, attendance.time)}</p>
+                    <p><strong>Estado:</strong> 
+                        <span class="badge ${
+                            attendance.status === 'Confirmada' ? 'bg-success' : 'bg-danger'
+                        }">
+                            ${attendance.status}
+                        </span>
+                    </p>
+                    <p><strong>Entrenador:</strong> ${trainer ? trainer.name : 'N/A'}</p>
+                </div>
+            </div>
+            ${attendance.notes ? `<div class="alert alert-info"><strong>Notas:</strong> ${attendance.notes}</div>` : ''}
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-close="attendance-details-modal">Cerrar</button>
+            <button type="button" class="btn btn-primary" onclick="editAttendance(${attendance.id})">
+                Editar Registro
+            </button>
+        </div>
+    `;
+
+    // Mostrar modal (asumiendo que tienes un modal con id 'attendance-details-modal')
+    const modal = document.getElementById('attendance-details-modal');
+    modal.querySelector('.modal-content').innerHTML = modalContent;
+    openModal('attendance-details-modal');
+}
+
     // Form submissions
  // Client form
 document.getElementById('client-form').addEventListener('submit', function(e) {
@@ -2192,6 +2299,7 @@ document.getElementById('client-form').addEventListener('submit', function(e) {
         
         saveGymData(data);
         loadAttendanceTable();
+        loadRecentAttendance();
         
         // Refresh the attendance filter if it's active
         const clientFilter = document.getElementById('attendance-client-filter').value;

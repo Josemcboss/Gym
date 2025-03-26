@@ -8,12 +8,12 @@
     --danger: #ff4000;          /* Red-Orange */
     --warning: #ffa366;         /* Pale Orange */
     --info: #ff944d;            /* Medium Orange */
-    --background: #2c2c2c;      /* Dark Gray Background */
-    --card-bg: #333333;         /* Slightly Lighter Gray for Cards */
-    --input-bg: #404040;        /* Input Background */
-    --border: #444444;          /* Border Color */
-    --hover-bg: #404040;        /* Hover Background */
-    --modal-bg: rgba(0, 0, 0, 0.7); /* Modal Overlay Background */
+    --background: #2f2b3a;      /* Gris con morado para el fondo */
+    --card-bg: #363145;         /* Gris morado más claro para tarjetas */
+    --input-bg: #403b4f;        /* Gris morado para inputs */
+    --border: #4a4558;          /* Borde en tono gris morado */
+    --hover-bg: #453f54;        /* Fondo hover en tono gris morado */
+    --modal-bg: rgba(47, 43, 58, 0.8); /* Modal overlay con tono morado */
 }
 
 * {
@@ -35,7 +35,7 @@ body {
 
 .sidebar {
     width: 250px;
-    background-color: #414040;
+    background-color: #28253a; /* Fondo sidebar más oscuro */
     color: white;
     padding: 20px 0;
     transition: all 0.3s;
@@ -233,7 +233,7 @@ table th, table td {
 }
 
 table th {
-    background-color: #000000;
+    background-color: #201d2e; /* Fondo de encabezados de tabla más oscuro */
     color: white;
     font-weight: 600;
 }

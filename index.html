@@ -511,10 +511,11 @@
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>ID Entrenador</th>
+                                        <th>ID</th>
                                         <th>Nombre</th>
-                                        <th>Clientes Asignados</th>
-                                        <th>Sesiones Realizadas</th>
+                                        <th>Especialidad</th>
+                                        <th>Sesiones Totales</th>
+                                        <th>Clientes Únicos</th>
                                         <th>Última Sesión</th>
                                     </tr>
                                 </thead>
@@ -1990,51 +1991,62 @@ function getLastAttendance(cedula) {
 
     // Generate trainer report
     function generateTrainerReport() {
-    // Obtener el valor del filtro
     const trainerId = document.getElementById('trainer-report-trainer').value;
-    
-    // Obtener los datos del gimnasio
     const data = getGymData();
-    let filteredTrainers = data.trainers;
     
-    // Aplicar filtro si existe
-    if (trainerId) {
-        filteredTrainers = filteredTrainers.filter(t => t.id == trainerId);
-    }
-    
-    // Generar la tabla de resultados
+    // Filter trainers based on selection
+    let filteredTrainers = trainerId ? 
+        data.trainers.filter(t => t.id.toString() === trainerId) : 
+        data.trainers;
+
     const tableBody = document.getElementById('trainer-report-table');
     tableBody.innerHTML = '';
-    
+
+    // Show message if no trainers found
+    if (filteredTrainers.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No se encontraron entrenadores</td></tr>';
+        return;
+    }
+
     filteredTrainers.forEach(trainer => {
-        // Calcular métricas para cada entrenador
-        const assignedClients = new Set();
-        let sessionsCount = 0;
-        let lastSession = null;
-        
-        data.attendance.forEach(attendance => {
-            if (attendance.trainer_id === trainer.id) {
-                assignedClients.add(attendance.client_cedula);
-                sessionsCount++;
-                
-                const sessionDate = new Date(attendance.date + 'T' + attendance.time);
-                if (!lastSession || sessionDate > new Date(lastSession.date + 'T' + lastSession.time)) {
-                    lastSession = attendance;
-                }
-            }
-        });
-        
+        // Get trainer's sessions
+        const trainerSessions = data.attendance.filter(a => 
+            a.trainer_id === trainer.id && 
+            a.status === 'Confirmada'
+        );
+
+        // Calculate unique clients
+        const uniqueClients = new Set(trainerSessions.map(s => s.client_cedula));
+
+        // Get last session
+        const lastSession = trainerSessions.length > 0 ? 
+            trainerSessions.reduce((latest, current) => {
+                const currentDate = new Date(`${current.date}T${current.time}`);
+                const latestDate = new Date(`${latest.date}T${latest.time}`);
+                return currentDate > latestDate ? current : latest;
+            }) : null;
+
+        // Create table row
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${trainer.id}</td>
             <td>${trainer.name}</td>
-            <td>${assignedClients.size}</td>
-            <td>${sessionsCount}</td>
-            <td>${lastSession ? formatDateTime(lastSession.date, lastSession.time) : 'Ninguna'}</td>
+            <td>${trainer.specialty}</td>
+            <td>${trainerSessions.length}</td>
+            <td>${uniqueClients.size}</td>
+            <td>${lastSession ? formatDateTime(lastSession.date, lastSession.time) : 'Sin sesiones'}</td>
         `;
         tableBody.appendChild(row);
     });
 }
+
+// Add event listener
+document.addEventListener('DOMContentLoaded', function() {
+    const generateButton = document.getElementById('generate-trainer-report');
+    if (generateButton) {
+        generateButton.addEventListener('click', generateTrainerReport);
+    }
+});
 // Event listeners para los botones de reportes
 document.getElementById('generate-income-report').addEventListener('click', generateIncomeReport);
 document.getElementById('generate-attendance-report').addEventListener('click', generateAttendanceReport);

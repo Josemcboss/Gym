@@ -677,7 +677,7 @@
             <form id="payment-form">
                 <input type="hidden" id="payment-id">
                 <div class="form-group">
-                    <label class="form-label" for="payment-client">cliente</label>
+                    <label class="form-label" for="payment-client">Cedula</label>
                     <select class="form-control" id="payment-client" required>
                         <option value="">Seleccionar cliente</option>
                         <!-- Clients will be loaded here -->
@@ -1286,25 +1286,19 @@ function loadPaymentsTable() {
     const tableBody = document.getElementById('payments-table');
     tableBody.innerHTML = '';
     
-    // Ordenar pagos por fecha (más reciente primero)
+    // Sort payments by date (newest first)
     const sortedPayments = [...data.payments].sort((a, b) => {
         return new Date(b.date) - new Date(a.date);
     });
     
     sortedPayments.forEach(payment => {
-        // Obtener cliente con manejo seguro
+        // Get client safely
         const client = payment.client_cedula ? getClientByCedula(payment.client_cedula) : null;
         
-        // Obtener membresía con manejo seguro
-        function getMembershipById(id) {
-    const data = getGymData();
-    // Convertir ambos IDs a string para comparación segura
-    return data.memberships.find(membership => 
-        membership && membership.id && membership.id.toString() === id.toString()
-    ) || null;
-}
+        // Get membership safely - THIS WAS MISSING
+        const membership = payment.membership_id ? getMembershipById(payment.membership_id) : null;
         
-        // Calcular monto final con valor por defecto
+        // Calculate final amount with default value
         const finalAmount = payment.amount ? payment.amount * (1 - (payment.discount || 0) / 100) : 0;
         
         const row = document.createElement('tr');

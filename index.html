@@ -2182,32 +2182,7 @@ document.getElementById('client-form').addEventListener('submit', function(e) {
             closeModal('payment-modal');
         });
     
-        // Trainer form
-        document.getElementById('trainer-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-            const data = getGymData();
-            const trainerId = document.getElementById('trainer-id').value;
-            const trainer = {
-                id: trainerId ? parseInt(trainerId) : generateId('trainers'),
-                name: document.getElementById('trainer-name').value,
-                specialty: document.getElementById('trainer-specialty').value,
-                email: document.getElementById('trainer-email').value,
-                phone: document.getElementById('trainer-phone').value,
-                schedule: document.getElementById('trainer-schedule').value
-            };
-    
-            if (trainerId) {
-                const index = data.trainers.findIndex(t => t.id === parseInt(trainerId));
-                data.trainers[index] = trainer;
-            } else {
-                data.trainers.push(trainer);
-            }
-    
-            saveGymData(data);
-            loadTrainersTable();
-            closeModal('trainer-modal');
-        });
-    
+ 
         // Close modal when clicking on X or outside the modal
         document.addEventListener('click', function(event) {
             if (event.target.classList.contains('modal-close') || event.target.hasAttribute('data-close')) {

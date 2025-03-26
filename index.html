@@ -869,15 +869,7 @@ function initializeLocalStorage() {
     if (!localStorage.getItem('gymData')) {
         // Create initial data structure
         const initialData = {
-            clients: [{
-                id: 1,
-                cedula: "123456789",
-                name: "Cliente Demo",
-                email: "cliente@demo.com",
-                phone: "1234567890",
-                membership_id: 1,
-                start_date: "2025-01-01"
-            }],
+            clients: [],
                     trainers: [],
                     memberships: [
                         {
@@ -1023,7 +1015,8 @@ function saveGymData(data) {
         // Get client by ID
         function getClientByCedula(cedula) {
     const data = getGymData();
-    return data.clients.find(client => client.cedula === cedula);
+    // Asegúrate de que la cédula se compara correctamente (puede ser string vs number)
+    return data.clients.find(client => client.cedula.toString() === cedula.toString());
 }
         // Get membership by ID
         function getMembershipById(id) {
@@ -2014,41 +2007,36 @@ function saveGymData(data) {
         document.getElementById('membership-id').value = '';
     });
 
-    // Attendance form
-    document.getElementById('attendance-form').addEventListener('submit', function(event) {
-        event.preventDefault();
-        
-        const data = getGymData();
-        const attendanceId = document.getElementById('attendance-id').value;
-        
-        const attendance = {
-            client_cedula: parseInt(document.getElementById('attendance-client').value),
-            date: document.getElementById('attendance-date').value,
-            time: document.getElementById('attendance-time').value,
-            status: document.getElementById('attendance-status').value
-        };
-        
-        // Add trainer if selected
-        const trainerId = document.getElementById('attendance-trainer').value;
-        if (trainerId) {
-            attendance.trainer_id = parseInt(trainerId);
-        }
-        
-        if (attendanceId) {
-            // Update existing attendance
-            attendance.id = parseInt(attendanceId);
-            const index = data.attendance.findIndex(a => a.id === attendance.id);
-            if (index !== -1) {
-                data.attendance[index] = attendance;
-            }
-        } else {
-            // Add new attendance
-            attendance.id = generateId('attendance');
-            data.attendance.push(attendance);
-        }
-        
-        saveGymData(data);
-        loadAttendanceTable();
+// Attendance form - solo un event listener
+document.getElementById('attendance-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+    
+    const data = getGymData();
+    const attendanceId = document.getElementById('attendance-id').value;
+    
+    const attendance = {
+        client_cedula: document.getElementById('attendance-client').value, // ya es string
+        date: document.getElementById('attendance-date').value,
+        time: document.getElementById('attendance-time').value,
+        status: document.getElementById('attendance-status').value,
+        trainer_id: document.getElementById('attendance-trainer').value || null
+    };
+    
+    if (attendanceId) {
+        // Update
+        attendance.id = parseInt(attendanceId);
+        const index = data.attendance.findIndex(a => a.id === attendance.id);
+        if (index !== -1) data.attendance[index] = attendance;
+    } else {
+        // Add new
+        attendance.id = generateId('attendance');
+        data.attendance.push(attendance);
+    }
+    
+    saveGymData(data);
+    loadAttendanceTable();
+    closeModal('attendance-modal');
+});
         
         // Refresh the attendance filter if it's active
         const clientFilter = document.getElementById('attendance-client-filter').value;

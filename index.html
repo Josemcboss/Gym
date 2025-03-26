@@ -551,11 +551,15 @@
                 </div>          
                 <div class="form-group">
                     <label class="form-label" for="client-name">Nombre</label>
-                    <input type="text" class="form-control" id="client-name" pattern="[A-Za-záéíóúÁÉÍÓÚñÑ\s]+" required>
+                    <input type="text" class="form-control" id="client-name" pattern="[A-Za-záéíóúÁÉÍÓÚñÑ\s]+" required maxlength="50">
+                    <small id="client-name-count" class="text-muted">0 / 50</small>
+                    <small id="client-name-warning" class="text-danger" style="display: none;">Máximo 50 caracteres permitidos.</small>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="client-email">Correo electrónico</label>
-                    <input type="email" class="form-control" id="client-email" required>
+                    <input type="email" class="form-control" id="client-email" required maxlength="75">
+                    <small id="client-email-count" class="text-muted">0 / 75</small>
+                    <small id="client-email-warning" class="text-danger" style="display: none;">Máximo 75 caracteres permitidos.</small>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="client-birthdate">Fecha de Nacimiento</label>
@@ -2673,6 +2677,13 @@ document.getElementById('add-trainer-btn').addEventListener('click', function() 
 document.getElementById('add-client-btn').addEventListener('click', function() {
     // Reinicia el formulario para limpiar datos anteriores
     document.getElementById('client-form').reset();
+    // Establece la fecha actual en formato yyyy-mm-dd
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const formattedToday = `${yyyy}-${mm}-${dd}`;
+    document.getElementById('client-start-date').value = formattedToday;
     // Cambia el título del modal a "Agregar Cliente"
     document.getElementById('client-modal-title').textContent = 'Agregar Cliente';
     // Abre el modal
@@ -2878,6 +2889,38 @@ document.getElementById('client-phone').addEventListener('input', function(e) {
     if (this.value.length > 10) {
         this.value = this.value.slice(0, 10);
     }
+});
+
+// Nombre - contador con advertencia
+document.getElementById('client-name').addEventListener('input', function () {
+    const length = this.value.length;
+    const counter = document.getElementById('client-name-count');
+    const warning = document.getElementById('client-name-warning');
+    counter.textContent = `${length} / 50`;
+
+    if (length >= 45) {
+        counter.style.color = 'red';
+    } else {
+        counter.style.color = '';
+    }
+
+    warning.style.display = length === 50 ? 'inline' : 'none';
+});
+
+// Email - contador con advertencia
+document.getElementById('client-email').addEventListener('input', function () {
+    const length = this.value.length;
+    const counter = document.getElementById('client-email-count');
+    const warning = document.getElementById('client-email-warning');
+    counter.textContent = `${length} / 75`;
+
+    if (length >= 68) {
+        counter.style.color = 'red';
+    } else {
+        counter.style.color = '';
+    }
+
+    warning.style.display = length === 75 ? 'inline' : 'none';
 });
 
     </script>

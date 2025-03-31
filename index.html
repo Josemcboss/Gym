@@ -514,8 +514,9 @@
                                         <th>ID</th>
                                         <th>Nombre</th>
                                         <th>Especialidad</th>
-                                        <th>Clientes Asignados</th>
-                                        <th>Lista de Clientes</th>
+                                        <th>Sesiones Totales</th>
+                                        <th>Clientes Únicos</th>
+                                        <th>Última Sesión</th>
                                     </tr>
                                 </thead>
                                 <tbody id="trainer-report-table">
@@ -583,13 +584,6 @@
                 <div class="form-group">
                     <label class="form-label" for="client-start-date">Fecha de inicio</label>
                     <input type="date" class="form-control" id="client-start-date" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="client-trainer">Entrenador Asignado</label>
-                    <select class="form-control" id="client-trainer">
-                        <option value="">Sin entrenador</option>
-                        <!-- Los entrenadores se cargarán dinámicamente -->
-                    </select>
                 </div>
                 <div class="form-group">
                     <button type="submit" class="btn btn-primary">Guardar</button>
@@ -905,13 +899,13 @@ function initializeLocalStorage() {
         // Create initial data structure
         const initialData = {
             clients: [{
+                id: 1,
                 cedula: "123456789",
                 name: "Cliente Demo",
                 email: "cliente@demo.com",
                 phone: "1234567890",
                 membership_id: 1,
-                start_date: "2025-01-01",
-                trainer_id: 1 // ID del entrenador asignado
+                start_date: "2025-01-01"
             }],
                     trainers: [],
                     memberships: [
@@ -1214,12 +1208,10 @@ document.getElementById('payment-client').addEventListener('change', function ()
             const data = getGymData();
             const attendanceTrainerSelect = document.getElementById('attendance-trainer');
             const trainerReportSelect = document.getElementById('trainer-report-trainer');
-            const clientTrainerSelect = document.getElementById('client-trainer');
             
             // Clear previous options
             attendanceTrainerSelect.innerHTML = '<option value="">Ninguno</option>';
             trainerReportSelect.innerHTML = '<option value="">Todos los entrenadores</option>';
-            clientTrainerSelect.innerHTML = '<option value="">Sin entrenador</option>';
             
             data.trainers.forEach(trainer => {
                 // For attendance trainer select
@@ -1233,12 +1225,6 @@ document.getElementById('payment-client').addEventListener('change', function ()
                 option2.value = trainer.id;
                 option2.textContent = trainer.name;
                 trainerReportSelect.appendChild(option2);
-
-                // For client trainer select
-                const option3 = document.createElement('option');
-                option3.value = trainer.id;
-                option3.textContent = trainer.name;
-                clientTrainerSelect.appendChild(option3);
             });
         }
 
@@ -1277,7 +1263,6 @@ document.getElementById('payment-client').addEventListener('change', function ()
                 const membership = getMembershipById(client.membership_id);
                 const endDate = calculateEndDate(client.start_date, membership.duration);
                 const isActive = isMembershipActive(client.start_date, membership.duration);
-                const trainer = client.trainer_id ? getTrainerById(client.trainer_id) : null;
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
@@ -1291,7 +1276,6 @@ document.getElementById('payment-client').addEventListener('change', function ()
                             ${isActive ? 'Activo' : 'Inactivo'}
                         </span>
                     </td>
-                    <td>${trainer ? trainer.name : 'Sin entrenador'}</td>
                     <td>
                         <button class="btn btn-primary" onclick="viewClient('${client.cedula}')">Ver</button>
                         <button class="btn btn-warning" onclick="editClient('${client.cedula}')">Editar</button>
@@ -1452,7 +1436,6 @@ function loadPaymentsTable() {
     const membership = getMembershipById(client.membership_id);
     const endDate = calculateEndDate(client.start_date, membership.duration);
     const isActive = isMembershipActive(client.start_date, membership.duration);
-    const trainer = client.trainer_id ? getTrainerById(client.trainer_id) : null;
     
     // Set basic information
     document.getElementById('view-client-id').textContent = client.cedula;
@@ -1468,7 +1451,6 @@ function loadPaymentsTable() {
     document.getElementById('view-client-end-date').textContent = formatDate(endDate);
     document.getElementById('view-client-status').textContent = isActive ? 'Activo' : 'Inactivo';
     document.getElementById('client-view-name').textContent = `Cliente: ${client.name}`;
-    document.getElementById('view-client-trainer').textContent = trainer ? trainer.name : 'Sin entrenador';
 
     // Load attendance history
      // Load attendance history
@@ -1506,7 +1488,6 @@ function loadPaymentsTable() {
         .filter(p => p.client_cedula === client.cedula)
         .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    if (clientPayments.length === 0) {
     if (clientPayments.length === 0) {
         paymentsTable.innerHTML = '<tr><td colspan="5" class="text-center">No hay registros de pagos</td></tr>';
     } else {
@@ -1557,7 +1538,6 @@ function loadPaymentsTable() {
             document.getElementById('client-gender').value = client.gender;
             document.getElementById('client-membership').value = client.membership_id;
             document.getElementById('client-start-date').value = client.start_date;
-            document.getElementById('client-trainer').value = client.trainer_id || '';
             
             // Show modal
             openModal('client-modal');
@@ -2759,7 +2739,6 @@ function viewAttendanceDetails(attendanceId) {
     const gender = document.getElementById('client-gender').value;
     const membershipId = document.getElementById('client-membership').value;
     const startDate = document.getElementById('client-start-date').value;
-    const trainerId = document.getElementById('client-trainer').value || null;
 
     const isEditing = !!document.getElementById('client-modal-title').textContent.includes('Editar');
     const currentCedula = isEditing ? document.getElementById('client-cedula').dataset.originalCedula : null;
@@ -2783,8 +2762,7 @@ function viewAttendanceDetails(attendanceId) {
                 birthdate,
                 gender,
                 membership_id: membershipId,
-                start_date: startDate,
-                trainer_id: trainerId
+                start_date: startDate
             };
         }
     } else {
@@ -2797,8 +2775,7 @@ function viewAttendanceDetails(attendanceId) {
             birthdate,
             gender,
             membership_id: membershipId,
-            start_date: startDate,
-            trainer_id: trainerId
+            start_date: startDate
         };
         data.clients.push(newClient);
     }
@@ -3209,7 +3186,6 @@ function searchClients() {
     filteredClients.forEach(client => {
         const membership = getMembershipById(client.membership_id);
         const isActive = isMembershipActive(client.start_date, membership.duration);
-        const trainer = client.trainer_id ? getTrainerById(client.trainer_id) : null;
         
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -3223,7 +3199,6 @@ function searchClients() {
                     ${isActive ? 'Activo' : 'Inactivo'}
                 </span>
             </td>
-            <td>${trainer ? trainer.name : 'Sin entrenador'}</td>
             <td>
                 <button class="btn btn-primary" onclick="viewClient('${client.cedula}')">Ver</button>
                 <button class="btn btn-warning" onclick="editClient('${client.cedula}')">Editar</button>

@@ -1530,6 +1530,7 @@ function loadPaymentsTable() {
             
             // Fill form with client data
             document.getElementById('client-cedula').value = client.cedula;
+            document.getElementById('client-cedula').dataset.originalCedula = client.cedula;
             document.getElementById('client-name').value = client.name;
             document.getElementById('client-email').value = client.email;
             document.getElementById('client-phone').value = client.phone;
@@ -2726,55 +2727,64 @@ function viewAttendanceDetails(attendanceId) {
 
     // Form submissions
  // Client form
- document.getElementById('client-form').addEventListener('submit', function(e) {
+ document.getElementById('client-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    
+
     const data = getGymData();
-    
-    // Extract form values
-    const cedula = document.getElementById('client-cedula').value.trim();
+    const cedula = document.getElementById('client-cedula').value;
     const name = document.getElementById('client-name').value;
     const email = document.getElementById('client-email').value;
     const phone = document.getElementById('client-phone').value;
     const birthdate = document.getElementById('client-birthdate').value;
     const gender = document.getElementById('client-gender').value;
-    const membership_id = document.getElementById('client-membership').value;
-    const start_date = document.getElementById('client-start-date').value;
+    const membershipId = document.getElementById('client-membership').value;
+    const startDate = document.getElementById('client-start-date').value;
 
-    // Create new client object
-    const newClient = {
-        cedula: cedula,  // Guardar como string
-        name: document.getElementById('client-name').value,
-        email: document.getElementById('client-email').value,
-        phone: document.getElementById('client-phone').value,
-        birthdate: document.getElementById('client-birthdate').value,
-        gender: document.getElementById('client-gender').value,
-        membership_id: parseInt(document.getElementById('client-membership').value),
-        start_date: document.getElementById('client-start-date').value
-    };
-    
-    // Check if we're editing an existing client or adding a new one
-    const existingIndex = data.clients.findIndex(c => c.cedula === cedula);
-    
-    if (existingIndex !== -1) {
-        // Update existing client
-        data.clients[existingIndex] = newClient;
+    const isEditing = !!document.getElementById('client-modal-title').textContent.includes('Editar');
+    const currentCedula = isEditing ? document.getElementById('client-cedula').dataset.originalCedula : null;
+
+    // Verificar si ya existe un cliente con la misma cédula (excluyendo el cliente actual si está editando)
+    const existingClient = data.clients.find(client => client.cedula === cedula && client.cedula !== currentCedula);
+    if (existingClient) {
+        alert('Ya existe un cliente con esta cédula. Por favor, verifica los datos.');
+        return;
+    }
+
+    if (isEditing) {
+        // Actualizar cliente existente
+        const clientIndex = data.clients.findIndex(client => client.cedula === currentCedula);
+        if (clientIndex !== -1) {
+            data.clients[clientIndex] = {
+                cedula,
+                name,
+                email,
+                phone,
+                birthdate,
+                gender,
+                membership_id: membershipId,
+                start_date: startDate
+            };
+        }
     } else {
-        // Add new client
+        // Crear un nuevo cliente
+        const newClient = {
+            cedula,
+            name,
+            email,
+            phone,
+            birthdate,
+            gender,
+            membership_id: membershipId,
+            start_date: startDate
+        };
         data.clients.push(newClient);
     }
-    
-    // Save the data
+
     saveGymData(data);
-    
-    // Refresh UI
     loadClientsTable();
     loadClientSelect();
-    updateDashboardStats();
-    
-    // Close modal and reset form
     closeModal('client-modal');
-    this.reset();
+    this.reset(); // Limpia el formulario
 });
 
     // Membership form

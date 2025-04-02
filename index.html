@@ -761,8 +761,15 @@
             <form id="trainer-form">
                 <input type="hidden" id="trainer-id">
                 <div class="form-group">
+                    <label class="form-label" for="trainer-cedula">Cédula</label>
+                    <input type="text" class="form-control" id="trainer-cedula" 
+                           maxlength="11" pattern="[0-9]*" required 
+                           placeholder="Ingrese la cédula">
+                </div>
+                <div class="form-group">
                     <label class="form-label" for="trainer-name">Nombre</label>
-                    <input type="text" class="form-control" id="trainer-name" pattern="[A-Za-záéíóúÁÉÍÓÚñÑ\s]+" required>
+                    <input type="text" class="form-control" id="trainer-name" 
+                           pattern="[A-Za-záéíóúÁÉÍÓÚñÑ\s]+" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-specialty">Especialidad</label>
@@ -771,6 +778,9 @@
                         <option value="Cardio">Cardio</option>
                         <option value="Zumba">Zumba</option>
                         <option value="Pesas">Pesas</option>
+                        <option value="Funcional">Funcional</option>
+                        <option value="CrossFit">CrossFit</option>
+                        <option value="Yoga">Yoga</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -785,7 +795,8 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-schedule">Horario</label>
-                    <input type="text" class="form-control" id="trainer-schedule" placeholder="Ej: Lunes a Viernes, 8am - 4pm">
+                    <input type="text" class="form-control" id="trainer-schedule" 
+                           placeholder="Ej: Lunes a Viernes, 8am - 4pm">
                 </div>
                 <div class="form-group">
                     <button type="submit" class="btn btn-primary">Guardar</button>
@@ -1135,62 +1146,86 @@ document.getElementById('payment-membership').addEventListener('change', functio
 
         // Load data into client select
         function loadClientSelect() {
-            const data = getGymData();
-            const attendanceClientSelect = document.getElementById('attendance-client');
-            const paymentClientSelect = document.getElementById('payment-client');
-            const attendanceFilterSelect = document.getElementById('attendance-client-filter');
-            const attendanceReportSelect = document.getElementById('attendance-report-client');
-            
-            // Clear previous options
-            attendanceClientSelect.innerHTML = '<option value="">Seleccionar cliente</option>';
-            paymentClientSelect.innerHTML = '<option value="">Seleccionar cliente</option>';
-            attendanceFilterSelect.innerHTML = '<option value="">Todos los clientes</option>';
-            attendanceReportSelect.innerHTML = '<option value="">Todos los clientes</option>';
-            
-            // Add active clients
-            data.clients.filter(client => {
-                const membership = getMembershipById(client.membership_id);
-                return isMembershipActive(client.start_date, membership.duration);
-            }).forEach(client => {
-                // For attendance client select
-                const option1 = document.createElement('option');
-                option1.value = client.cedula;
-                option1.textContent = client.cedula;
-                attendanceClientSelect.appendChild(option1);
-                
-                // For payment client select
-                const option2 = document.createElement('option');
-                option2.value = client.cedula;
-                option2.textContent = client.cedula;
-                paymentClientSelect.appendChild(option2);
-                
-                // For attendance filter select
-                const option3 = document.createElement('option');
-                option3.value = client.id;
-                option3.textContent = client.name;
-                attendanceFilterSelect.appendChild(option3);
-                
-                // For attendance report select
-                const option4 = document.createElement('option');
-                option4.value = client.id;
-                option4.textContent = client.name;
-                attendanceReportSelect.appendChild(option4);
+    const data = getGymData();
+    const attendanceClientSelect = document.getElementById('attendance-client');
+    const paymentClientSelect = document.getElementById('payment-client');
+    const attendanceFilterSelect = document.getElementById('attendance-client-filter');
+    const attendanceReportSelect = document.getElementById('attendance-report-client');
+    
+    // Limpiar las opciones previas
+    const selects = [
+        attendanceClientSelect, 
+        paymentClientSelect, 
+        attendanceFilterSelect, 
+        attendanceReportSelect
+    ].filter(Boolean);
+
+    selects.forEach(select => {
+        if (select) {
+            select.innerHTML = '<option value="">Seleccionar cliente</option>';
+
+            // Obtener todos los clientes
+            data.clients.forEach(client => {
+                const option = document.createElement('option');
+                option.value = client.cedula;
+                option.textContent = `${client.cedula} - ${client.name}`;
+                select.appendChild(option);
             });
         }
+    });
 
-        // Mostrar cédula y nombre del cliente seleccionado en el modal de pago
-document.getElementById('payment-client').addEventListener('change', function () {
-    const cedula = this.value;
-    const client = getClientByCedula(cedula);
-    
-    if (client) {
-        document.getElementById('payment-client-name').value = client.name;
-        // Si quieres mostrar también la cédula en un campo oculto o de solo lectura:
-        // document.getElementById('payment-client-cedula').value = client.cedula;
-    } else {
-        document.getElementById('payment-client-name').value = '';
-        // document.getElementById('payment-client-cedula').value = '';
+    // Agregar event listeners para los selects de clientes
+    if (attendanceClientSelect) {
+        attendanceClientSelect.addEventListener('change', function() {
+            updateClientName(this.value, 'attendance-client-name');
+        });
     }
+
+    if (paymentClientSelect) {
+        paymentClientSelect.addEventListener('change', function() {
+            updateClientName(this.value, 'payment-client-name');
+        });
+    }
+}
+
+// Función auxiliar para actualizar el nombre del cliente
+function updateClientName(cedula, targetInputId) {
+    const client = getClientByCedula(cedula);
+    const nameInput = document.getElementById(targetInputId);
+    
+    if (nameInput) {
+        nameInput.value = client ? client.name : '';
+    }
+
+    // Si es un pago, actualizar el monto según la membresía
+    if (targetInputId === 'payment-client-name' && client) {
+        const membershipSelect = document.getElementById('payment-membership');
+        if (membershipSelect && membershipSelect.value) {
+            const membership = getMembershipById(parseInt(membershipSelect.value));
+            if (membership) {
+                document.getElementById('payment-amount').value = membership.price;
+            }
+        }
+    }
+}
+
+// Agregar event listener para el formulario de pago
+document.getElementById('payment-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const cedula = document.getElementById('payment-client').value;
+    if (!cedula) {
+        alert('Por favor seleccione un cliente');
+        return;
+    }
+
+    const client = getClientByCedula(cedula);
+    if (!client) {
+        alert('Cliente no encontrado');
+        return;
+    }
+
+    // ... resto del código del formulario de pago ...
 });
 
         document.getElementById('client-cedula').addEventListener('input', function(e) {
@@ -1309,120 +1344,37 @@ document.getElementById('payment-client').addEventListener('change', function ()
             });
         }
 
-        // Load attendance table
-        function loadAttendanceTable() {
+        // Modificar la función loadTrainersTable
+function loadTrainersTable() {
     const data = getGymData();
-    const tableBody = document.getElementById('attendance-table');
+    const tableBody = document.getElementById('trainers-table');
     tableBody.innerHTML = '';
     
-    // Ordenar por fecha más reciente
-    const sortedAttendance = [...data.attendance].sort((a, b) => {
-        return new Date(`${b.date} ${b.time}`) - new Date(`${a.date} ${a.time}`);
-    });
-    
-    sortedAttendance.forEach(attendance => {
-        const client = getClientByCedula(attendance.client_cedula);
-        const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
-        
+    data.trainers.forEach(trainer => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${attendance.client_cedula}</td>
-            <td>${client ? client.name : 'Cliente no encontrado'}</td>
-            <td>${formatDateTime(attendance.date, attendance.time)}</td>
-            <td>${trainer ? trainer.name : 'Sin entrenador'}</td>
+            <td>${trainer.cedula}</td>
+            <td>${trainer.name}</td>
+            <td>${trainer.specialty}</td>
+            <td>${trainer.email}</td>
+            <td>${trainer.phone}</td>
+            <td>${countAssignedClients(trainer.id)}</td>
             <td>
-                <span class="badge ${attendance.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
-                    ${attendance.status}
-                </span>
-            </td>
-            <td>
-                <button class="btn btn-warning" onclick="editAttendance(${attendance.id})">Editar</button>
-                <button class="btn btn-danger" onclick="deleteAttendance(${attendance.id})">Eliminar</button>
+                <button class="btn btn-warning" onclick="editTrainer(${trainer.id})">Editar</button>
+                <button class="btn btn-danger" onclick="deleteTrainer(${trainer.id})">Eliminar</button>
             </td>
         `;
         tableBody.appendChild(row);
     });
 }
 
-// Función corregida para cargar la tabla de pagos
-function loadPaymentsTable() {
+// Agregar función para contar clientes asignados
+function countAssignedClients(trainerId) {
     const data = getGymData();
-    const tableBody = document.getElementById('payments-table');
-    tableBody.innerHTML = '';
-    
-    // Sort payments by date (newest first)
-    const sortedPayments = [...data.payments].sort((a, b) => {
-        return new Date(b.date) - new Date(a.date);
-    });
-    
-    sortedPayments.forEach(payment => {
-        // Get client safely
-        const client = payment.client_cedula ? getClientByCedula(payment.client_cedula) : null;
-        
-        // Get membership safely - THIS WAS MISSING
-        const membership = payment.membership_id ? getMembershipById(payment.membership_id) : null;
-        
-        // Calculate final amount with default value
-        const finalAmount = payment.amount ? payment.amount * (1 - (payment.discount || 0) / 100) : 0;
-        
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${payment.client_cedula || 'N/A'}</td>
-            <td>${client ? client.name : 'Cliente no encontrado'}</td>
-            <td>${membership ? membership.name : 'Membresía no encontrada'}</td>
-            <td>$${finalAmount.toFixed(2)}</td>
-            <td>${payment.method || 'N/A'}</td>
-            <td>
-                <span class="badge ${
-                    payment.status === 'Pagado' ? 'badge-success' : 
-                    payment.status === 'Pendiente' ? 'badge-warning' : 'badge-danger'
-                }">
-                    ${payment.status || 'Desconocido'}
-                </span>
-            </td>
-            <td>${payment.date ? formatDate(payment.date) : 'N/A'}</td>
-            <td>
-                <button class="btn btn-warning" onclick="editPayment(${payment.id})">Editar</button>
-                <button class="btn btn-danger" onclick="deletePayment(${payment.id})">Eliminar</button>
-            </td>
-        `;
-        tableBody.appendChild(row);
-    });
+    return data.clients.filter(client => client.trainer_id === trainerId).length;
 }
 
-    // Load trainers table
-    function loadTrainersTable() {
-        const data = getGymData();
-        const tableBody = document.getElementById('trainers-table');
-        tableBody.innerHTML = '';
-        
-        data.trainers.forEach(trainer => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${trainer.id}</td>
-                <td>${trainer.name}</td>
-                <td>${trainer.specialty}</td>
-                <td>${trainer.email}</td>
-                <td>${trainer.phone}</td>
-                <td>${trainer.schedule || 'No definido'}</td>
-                <td>
-                    <button class="btn btn-warning" onclick="editTrainer(${trainer.id})">Editar</button>
-                    <button class="btn btn-danger" onclick="deleteTrainer(${trainer.id})">Eliminar</button>
-                </td>
-            `;
-            tableBody.appendChild(row);
-        });
-    }
-    document.getElementById('trainer-phone').addEventListener('input', function(e) {
-    // Remove any non-numeric characters
-    this.value = this.value.replace(/[^0-9]/g, '');
-    
-    // Limit to 10 digits
-    if (this.value.length > 10) {
-        this.value = this.value.slice(0, 10);
-    }
-});
-    // View client details
+        // View client details
     function viewClient(cedula) {
     const data = getGymData();
     const client = getClientByCedula(cedula);
@@ -1637,27 +1589,24 @@ function loadPaymentsTable() {
         }
     }
 
-    // Edit trainer
-    function editTrainer(trainerId) {
-        const data = getGymData();
-        const trainer = data.trainers.find(t => t.id === trainerId);
+    // Modificar la función editTrainer
+function editTrainer(trainerId) {
+    const data = getGymData();
+    const trainer = data.trainers.find(t => t.id === trainerId);
+    
+    if (trainer) {
+        document.getElementById('trainer-modal-title').textContent = 'Editar Entrenador';
+        document.getElementById('trainer-id').value = trainer.id;
+        document.getElementById('trainer-cedula').value = trainer.cedula;
+        document.getElementById('trainer-name').value = trainer.name;
+        document.getElementById('trainer-specialty').value = trainer.specialty;
+        document.getElementById('trainer-email').value = trainer.email;
+        document.getElementById('trainer-phone').value = trainer.phone;
+        document.getElementById('trainer-schedule').value = trainer.schedule || '';
         
-        if (trainer) {
-            // Set modal title
-            document.getElementById('trainer-modal-title').textContent = 'Editar Entrenador';
-            
-            // Fill form with trainer data
-            document.getElementById('trainer-id').value = trainer.id;
-            document.getElementById('trainer-name').value = trainer.name;
-            document.getElementById('trainer-specialty').value = trainer.specialty;
-            document.getElementById('trainer-email').value = trainer.email;
-            document.getElementById('trainer-phone').value = trainer.phone;
-            document.getElementById('trainer-schedule').value = trainer.schedule || '';
-            
-            // Show modal
-            openModal('trainer-modal');
-        }
+        openModal('trainer-modal');
     }
+}
 
     // Delete trainer
     function deleteTrainer(trainerId) {
@@ -2863,14 +2812,26 @@ function viewAttendanceDetails(attendanceId) {
     this.reset();
 });
    
-    // Trainer form
-    document.getElementById('trainer-form').addEventListener('submit', function(event) {
+    // Modificar el evento submit del formulario de entrenador
+document.getElementById('trainer-form').addEventListener('submit', function(event) {
     event.preventDefault();
     
     const data = getGymData();
     const trainerId = document.getElementById('trainer-id').value;
     
+    // Verificar si la cédula ya existe (excepto para el mismo entrenador en edición)
+    const cedula = document.getElementById('trainer-cedula').value;
+    const existingTrainer = data.trainers.find(t => 
+        t.cedula === cedula && t.id !== (trainerId ? parseInt(trainerId) : null)
+    );
+
+    if (existingTrainer) {
+        alert('Ya existe un entrenador con esta cédula');
+        return;
+    }
+
     const trainer = {
+        cedula: cedula,
         name: document.getElementById('trainer-name').value,
         specialty: document.getElementById('trainer-specialty').value,
         email: document.getElementById('trainer-email').value,
@@ -2883,7 +2844,7 @@ function viewAttendanceDetails(attendanceId) {
         trainer.id = parseInt(trainerId);
         const index = data.trainers.findIndex(t => t.id === trainer.id);
         if (index !== -1) {
-            data.trainers[index] = trainer;
+            data.trainers[index] = {...data.trainers[index], ...trainer};
         }
     } else {
         // Add new trainer
@@ -2896,9 +2857,9 @@ function viewAttendanceDetails(attendanceId) {
     loadTrainerSelect();
     closeModal('trainer-modal');
     this.reset();
-        document.getElementById('trainer-id').value = '';
-        });
-    
+    document.getElementById('trainer-id').value = '';
+});
+
  
         // Payment form
         document.getElementById('payment-form').addEventListener('submit', function(event) {
@@ -3285,3 +3246,4 @@ function closeModalHandler() {
 
     </script>
 </body>
+</html>

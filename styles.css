@@ -560,3 +560,20 @@ table th, table td {
         transform: rotate(360deg);
     }
 }
+.btn-info {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.btn-info:hover {
+    background-color: #138496;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.ms-2 {
+    margin-left: 0.5rem;
+}

@@ -392,7 +392,7 @@
                                         <th>Descuento(%)</th>
                                         <th>Monto Final</th>
                                         <th>Método de pago</th>
-                                        <th>Estado</th>
+                                        <th>Estado / Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="income-report-table">
@@ -515,7 +515,7 @@
                                         <th>Nombre</th>
                                         <th>Especialidad</th>
                                         <th>Sesiones Totales</th>
-                                        <th>Clientes Únicos</th>
+                                        <th>Clientes Activos</th>
                                         <th>Última Sesión</th>
                                     </tr>
                                 </thead>
@@ -864,6 +864,25 @@
         </div>
     </div>
 
+    <!-- Invoice Modal -->
+    <div class="modal" id="invoice-modal">
+        <div class="modal-content" style="width: 80%; max-width: 800px;">
+            <div class="modal-header">
+                <h3>Factura</h3>
+                <button class="modal-close" data-close="invoice-modal">&times;</button>
+            </div>
+            <div id="invoice-content" class="p-4">
+                <!-- La factura se generará aquí -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-close="invoice-modal">Cerrar</button>
+                <button class="btn btn-primary" onclick="printInvoice()">
+                    <i class="bi bi-printer"></i> Imprimir
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Initialize data storage
 // Initialize the application
@@ -1139,48 +1158,48 @@ document.getElementById('payment-membership').addEventListener('change', functio
 
         // Load data into client select
         function loadClientSelect() {
-            const data = getGymData();
-            const attendanceClientSelect = document.getElementById('attendance-client');
-            const paymentClientSelect = document.getElementById('payment-client');
-            const attendanceFilterSelect = document.getElementById('attendance-client-filter');
-            const attendanceReportSelect = document.getElementById('attendance-report-client');
-            
-            // Clear previous options
-            attendanceClientSelect.innerHTML = '<option value="">Seleccionar cliente</option>';
-            paymentClientSelect.innerHTML = '<option value="">Seleccionar cliente</option>';
-            attendanceFilterSelect.innerHTML = '<option value="">Todos los clientes</option>';
-            attendanceReportSelect.innerHTML = '<option value="">Todos los clientes</option>';
-            
-            // Add active clients
-            data.clients.filter(client => {
-                const membership = getMembershipById(client.membership_id);
-                return isMembershipActive(client.start_date, membership.duration);
-            }).forEach(client => {
-                // For attendance client select
-                const option1 = document.createElement('option');
-                option1.value = client.cedula;
-                option1.textContent = client.cedula;
-                attendanceClientSelect.appendChild(option1);
-                
-                // For payment client select
-                const option2 = document.createElement('option');
-                option2.value = client.cedula;
-                option2.textContent = client.cedula;
-                paymentClientSelect.appendChild(option2);
-                
-                // For attendance filter select
-                const option3 = document.createElement('option');
-                option3.value = client.id;
-                option3.textContent = client.name;
-                attendanceFilterSelect.appendChild(option3);
-                
-                // For attendance report select
-                const option4 = document.createElement('option');
-                option4.value = client.id;
-                option4.textContent = client.name;
-                attendanceReportSelect.appendChild(option4);
-            });
+    const data = getGymData();
+    const attendanceClientSelect = document.getElementById('attendance-client');
+    const paymentClientSelect = document.getElementById('payment-client');
+    const attendanceFilterSelect = document.getElementById('attendance-client-filter');
+    const attendanceReportSelect = document.getElementById('attendance-report-client');
+
+    // Limpiar opciones previas
+    attendanceClientSelect.innerHTML = '<option value="">Seleccionar cliente</option>';
+    paymentClientSelect.innerHTML = '<option value="">Seleccionar cliente</option>';
+    attendanceFilterSelect.innerHTML = '<option value="">Todos los clientes</option>';
+    attendanceReportSelect.innerHTML = '<option value="">Todos los clientes</option>';
+
+    // Filtrar clientes con membresías activas
+    data.clients.forEach(client => {
+        const membership = getMembershipById(client.membership_id);
+        if (membership && isMembershipActive(client.start_date, membership.duration)) {
+            // Agregar cliente al selector de asistencia
+            const attendanceOption = document.createElement('option');
+            attendanceOption.value = client.cedula;
+            attendanceOption.textContent = `${client.cedula} - ${client.name}`;
+            attendanceClientSelect.appendChild(attendanceOption);
+
+            // Agregar cliente al selector de pagos
+            const paymentOption = document.createElement('option');
+            paymentOption.value = client.cedula;
+            paymentOption.textContent = `${client.cedula} - ${client.name}`;
+            paymentClientSelect.appendChild(paymentOption);
+
+            // Agregar cliente al filtro de asistencia
+            const filterOption = document.createElement('option');
+            filterOption.value = client.cedula;
+            filterOption.textContent = client.name;
+            attendanceFilterSelect.appendChild(filterOption);
+
+            // Agregar cliente al reporte de asistencia
+            const reportOption = document.createElement('option');
+            reportOption.value = client.cedula;
+            reportOption.textContent = client.name;
+            attendanceReportSelect.appendChild(reportOption);
         }
+    });
+}
 
         // Mostrar cédula y nombre del cliente seleccionado en el modal de pago
 document.getElementById('payment-client').addEventListener('change', function () {
@@ -1388,6 +1407,9 @@ function loadPaymentsTable() {
             <td>
                 <button class="btn btn-warning" onclick="editPayment(${payment.id})">Editar</button>
                 <button class="btn btn-danger" onclick="deletePayment(${payment.id})">Eliminar</button>
+                <button class="btn btn-info" onclick="viewInvoice(${payment.id})">
+                    <i class="bi bi-file-text"></i> Ver Factura
+                </button>
             </td>
         `;
         tableBody.appendChild(row);
@@ -2082,16 +2104,20 @@ function advancedSearch(criteria) {
             <td>${payment.discount || 0}%</td>
             <td>$${finalAmount.toFixed(2)}</td>
             <td>${payment.method}</td>
-            <td><span class="badge badge-success">${payment.status}</span></td>
+            <td>
+                <span class="badge badge-success">${payment.status}</span>
+                <button class="btn btn-info btn-sm ms-2" onclick="viewInvoice(${payment.id})">
+                    <i class="bi bi-file-text"></i> Ver Factura
+                </button>
+            </td>
         `;
         tableBody.appendChild(row);
         totalIncome += finalAmount;
     });
     
     document.getElementById('income-total').innerHTML = `<strong>$${totalIncome.toFixed(2)}</strong>`;
+}
 
-
-        
     function updateMembershipSummary(activeMemberships, inactiveMemberships, filteredClients) {
     try {
         const elements = {
@@ -2112,7 +2138,7 @@ function advancedSearch(criteria) {
         console.error('Error updating membership summary:', error);
     }
     }
-}
+
 function exportReport(type) {
     const tableData = [];
     let filename = '';
@@ -2317,42 +2343,153 @@ function getLastAttendance(cedula) {
     const tableBody = document.getElementById('trainer-report-table');
     tableBody.innerHTML = '';
 
-    // Show message if no trainers found
     if (filteredTrainers.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No se encontraron entrenadores</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron entrenadores</td></tr>';
         return;
     }
 
     filteredTrainers.forEach(trainer => {
-        // Get trainer's sessions
-        const trainerSessions = data.attendance.filter(a => 
-            a.trainer_id === trainer.id && 
-            a.status === 'Confirmada'
-        );
+        // Get all attendances for this trainer with unique clients
+        const uniqueClients = new Set();
+        const trainerAttendances = data.attendance.filter(a => {
+            if (a.trainer_id === trainer.id && a.status === 'Confirmada') {
+                uniqueClients.add(a.client_cedula);
+                return true;
+            }
+            return false;
+        });
 
-        // Calculate unique clients
-        const uniqueClients = new Set(trainerSessions.map(s => s.client_cedula));
+        // Get only active clients
+        const activeClients = Array.from(uniqueClients).filter(cedula => {
+            const client = getClientByCedula(cedula);
+            if (!client) return false;
+            
+            const membership = getMembershipById(client.membership_id);
+            return membership && isMembershipActive(client.start_date, membership.duration);
+        });
 
         // Get last session
-        const lastSession = trainerSessions.length > 0 ? 
-            trainerSessions.reduce((latest, current) => {
-                const currentDate = new Date(`${current.date}T${current.time}`);
-                const latestDate = new Date(`${latest.date}T${latest.time}`);
-                return currentDate > latestDate ? current : latest;
-            }) : null;
+        const lastSession = trainerAttendances.length > 0 ? 
+            trainerAttendances.sort((a, b) => 
+                new Date(`${b.date} ${b.time}`) - new Date(`${a.date} ${a.time}`)
+            )[0] : null;
 
-        // Create table row
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${trainer.id}</td>
             <td>${trainer.name}</td>
             <td>${trainer.specialty}</td>
-            <td>${trainerSessions.length}</td>
-            <td>${uniqueClients.size}</td>
+            <td>${trainerAttendances.length}</td>
+            <td>
+                ${activeClients.length}
+                <button class="btn btn-info btn-sm ms-2" onclick="viewTrainerClients(${trainer.id})">
+                    <i class="bi bi-eye"></i> Ver Clientes
+                </button>
+            </td>
             <td>${lastSession ? formatDateTime(lastSession.date, lastSession.time) : 'Sin sesiones'}</td>
         `;
         tableBody.appendChild(row);
     });
+}
+// Función para ver los clientes asignados a un entrenador
+// Función para ver los clientes asignados a un entrenador
+function viewTrainerClients(trainerId) {
+    const data = getGymData();
+    const trainer = data.trainers.find(t => t.id === trainerId);
+    
+    if (!trainer) {
+        alert('Entrenador no encontrado');
+        return;
+    }
+
+    // Obtener todas las asistencias confirmadas del entrenador
+    const trainerAttendances = data.attendance.filter(a => 
+        a.trainer_id === trainerId && 
+        a.status === 'Confirmada'
+    );
+
+    // Crear un Map para almacenar la última sesión de cada cliente
+    const clientsMap = new Map();
+
+    trainerAttendances.forEach(attendance => {
+        const client = getClientByCedula(attendance.client_cedula);
+        if (client) {
+            const membership = getMembershipById(client.membership_id);
+            if (membership && isMembershipActive(client.start_date, membership.duration)) {
+                const attendanceDate = new Date(attendance.date);
+                if (!clientsMap.has(client.cedula) || 
+                    attendanceDate > new Date(clientsMap.get(client.cedula).lastSession)) {
+                    clientsMap.set(client.cedula, {
+                        client: client,
+                        lastSession: attendance.date,
+                        membership: membership
+                    });
+                }
+            }
+        }
+    });
+
+    // Convertir el Map a array
+    const assignedClients = Array.from(clientsMap.values());
+
+    // Crear contenido del modal
+    let modalContent = `
+        <div class="modal-header">
+            <h3>Clientes Asignados a ${trainer.name}</h3>
+            <button class="modal-close" data-close="trainer-clients-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="trainer-info mb-3">
+                <p><strong>Especialidad:</strong> ${trainer.specialty}</p>
+                <p><strong>Total de clientes activos:</strong> ${assignedClients.length}</p>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Cédula</th>
+                        <th>Nombre</th>
+                        <th>Membresía</th>
+                        <th>Última Sesión</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    if (assignedClients.length === 0) {
+        modalContent += '<tr><td colspan="4" class="text-center">No hay clientes asignados actualmente</td></tr>';
+    } else {
+        assignedClients.forEach(({client, lastSession, membership}) => {
+            modalContent += `
+                <tr>
+                    <td>${client.cedula}</td>
+                    <td>${client.name}</td>
+                    <td>${membership.name}</td>
+                    <td>${formatDate(lastSession)}</td>
+                </tr>
+            `;
+        });
+    }
+
+    modalContent += `
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    // Mostrar el modal
+    const modal = document.createElement('div');
+    modal.id = 'trainer-clients-modal';
+    modal.className = 'modal';
+    modal.innerHTML = `<div class="modal-content">${modalContent}</div>`;
+    
+    // Remover modal existente si hay uno
+    const existingModal = document.getElementById('trainer-clients-modal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    document.body.appendChild(modal);
+    openModal('trainer-clients-modal');
 }
 
 // Add event listener
@@ -3310,6 +3447,118 @@ document.getElementById('client-phone').addEventListener('input', function () {
     countElement.style.color = currentLength >= maxLength - 2 ? 'red' : '';
     warningElement.style.display = currentLength === maxLength ? 'inline' : 'none';
 });
+
+
+// Función para ver la factura
+function viewInvoice(paymentId) {
+    const data = getGymData();
+    const payment = data.payments.find(p => p.id === paymentId);
+    
+    if (!payment) {
+        alert('Pago no encontrado');
+        return;
+    }
+
+    const client = getClientByCedula(payment.client_cedula);
+    const membership = getMembershipById(payment.membership_id);
+    const finalAmount = payment.amount * (1 - (payment.discount || 0) / 100);
+
+    // Generar el contenido de la factura
+    const invoiceContent = `
+        <div class="invoice-container">
+            <div class="invoice-header text-center mb-4">
+                <h2>GymManagement</h2>
+                <p>Factura de Pago</p>
+                <small>Fecha de emisión: ${formatDate(payment.date)}</small>
+            </div>
+
+            <div class="invoice-details mb-4">
+                <div class="row">
+                    <div class="col-6">
+                        <h4>Información del Cliente</h4>
+                        <p><strong>Nombre:</strong> ${client ? client.name : 'N/A'}</p>
+                        <p><strong>Cédula:</strong> ${payment.client_cedula}</p>
+                        <p><strong>Email:</strong> ${client ? client.email : 'N/A'}</p>
+                    </div>
+                    <div class="col-6 text-end">
+                        <h4>Detalles del Pago</h4>
+                        <p><strong>No. de Factura:</strong> ${payment.id}</p>
+                        <p><strong>Fecha:</strong> ${formatDate(payment.date)}</p>
+                        <p><strong>Estado:</strong> ${payment.status}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="invoice-items mb-4">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Descripción</th>
+                            <th class="text-end">Precio</th>
+                            <th class="text-end">Descuento</th>
+                            <th class="text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>${membership ? membership.name : 'Membresía'}</td>
+                            <td class="text-end">$${payment.amount.toFixed(2)}</td>
+                            <td class="text-end">${payment.discount || 0}%</td>
+                            <td class="text-end">$${finalAmount.toFixed(2)}</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                            <td class="text-end"><strong>$${finalAmount.toFixed(2)}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="invoice-footer">
+                <p><strong>Método de pago:</strong> ${payment.method}</p>
+                <p class="text-muted">Gracias por su preferencia</p>
+            </div>
+        </div>
+    `;
+
+    // Mostrar la factura en el modal
+    document.getElementById('invoice-content').innerHTML = invoiceContent;
+    openModal('invoice-modal');
+}
+
+// Función para imprimir la factura
+function printInvoice() {
+    const invoiceContent = document.getElementById('invoice-content').innerHTML;
+    const printWindow = window.open('', '_blank');
+    
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Factura - GymManagement</title>
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    .invoice-container { padding: 20px; }
+                    .text-center { text-align: center; }
+                    .text-end { text-align: right; }
+                    .mb-4 { margin-bottom: 1.5rem; }
+                    table { width: 100%; border-collapse: collapse; }
+                    th, td { padding: 8px; border-bottom: 1px solid #ddd; }
+                    .invoice-footer { margin-top: 2rem; }
+                </style>
+            </head>
+            <body>
+                ${invoiceContent}
+            </body>
+        </html>
+    `);
+    
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+}
     </script>
 </body>
 </html>

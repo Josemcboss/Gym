@@ -2335,7 +2335,7 @@ function getLastAttendance(cedula) {
     const trainerId = document.getElementById('trainer-report-trainer').value;
     const data = getGymData();
     
-    // Filter trainers based on selection
+    // Filtrar entrenadores
     let filteredTrainers = trainerId ? 
         data.trainers.filter(t => t.id.toString() === trainerId) : 
         data.trainers;
@@ -2349,28 +2349,27 @@ function getLastAttendance(cedula) {
     }
 
     filteredTrainers.forEach(trainer => {
-        // Get all attendances for this trainer with unique clients
-        const uniqueClients = new Set();
-        const trainerAttendances = data.attendance.filter(a => {
-            if (a.trainer_id === trainer.id && a.status === 'Confirmada') {
-                uniqueClients.add(a.client_cedula);
-                return true;
+        // Obtener todas las sesiones confirmadas del entrenador
+        const trainerSessions = data.attendance.filter(a => 
+            a.trainer_id === trainer.id && 
+            a.status === 'Confirmada'
+        );
+
+        // Obtener clientes únicos y activos
+        const activeClients = new Set();
+        trainerSessions.forEach(session => {
+            const client = getClientByCedula(session.client_cedula);
+            if (client) {
+                const membership = getMembershipById(client.membership_id);
+                if (membership && isMembershipActive(client.start_date, membership.duration)) {
+                    activeClients.add(client.cedula);
+                }
             }
-            return false;
         });
 
-        // Get only active clients
-        const activeClients = Array.from(uniqueClients).filter(cedula => {
-            const client = getClientByCedula(cedula);
-            if (!client) return false;
-            
-            const membership = getMembershipById(client.membership_id);
-            return membership && isMembershipActive(client.start_date, membership.duration);
-        });
-
-        // Get last session
-        const lastSession = trainerAttendances.length > 0 ? 
-            trainerAttendances.sort((a, b) => 
+        // Obtener la última sesión
+        const lastSession = trainerSessions.length > 0 ? 
+            trainerSessions.sort((a, b) => 
                 new Date(`${b.date} ${b.time}`) - new Date(`${a.date} ${a.time}`)
             )[0] : null;
 
@@ -2379,9 +2378,9 @@ function getLastAttendance(cedula) {
             <td>${trainer.id}</td>
             <td>${trainer.name}</td>
             <td>${trainer.specialty}</td>
-            <td>${trainerAttendances.length}</td>
+            <td>${trainerSessions.length}</td>
             <td>
-                ${activeClients.length}
+                ${activeClients.size}
                 <button class="btn btn-info btn-sm ms-2" onclick="viewTrainerClients(${trainer.id})">
                     <i class="bi bi-eye"></i> Ver Clientes
                 </button>
@@ -2391,6 +2390,7 @@ function getLastAttendance(cedula) {
         tableBody.appendChild(row);
     });
 }
+
 // Función para ver los clientes asignados a un entrenador
 // Función para ver los clientes asignados a un entrenador
 function viewTrainerClients(trainerId) {
@@ -2402,27 +2402,28 @@ function viewTrainerClients(trainerId) {
         return;
     }
 
-    // Obtener todas las asistencias confirmadas del entrenador
+    // Obtener asistencias confirmadas del entrenador
     const trainerAttendances = data.attendance.filter(a => 
         a.trainer_id === trainerId && 
         a.status === 'Confirmada'
     );
 
-    // Crear un Map para almacenar la última sesión de cada cliente
-    const clientsMap = new Map();
-
+    // Obtener clientes únicos y sus últimas sesiones
+    const clientSessions = new Map();
+    
     trainerAttendances.forEach(attendance => {
         const client = getClientByCedula(attendance.client_cedula);
         if (client) {
             const membership = getMembershipById(client.membership_id);
             if (membership && isMembershipActive(client.start_date, membership.duration)) {
-                const attendanceDate = new Date(attendance.date);
-                if (!clientsMap.has(client.cedula) || 
-                    attendanceDate > new Date(clientsMap.get(client.cedula).lastSession)) {
-                    clientsMap.set(client.cedula, {
-                        client: client,
+                const currentDate = new Date(attendance.date);
+                const existingDate = clientSessions.get(client.cedula)?.lastSession;
+                
+                if (!existingDate || currentDate > new Date(existingDate)) {
+                    clientSessions.set(client.cedula, {
+                        client,
                         lastSession: attendance.date,
-                        membership: membership
+                        membership
                     });
                 }
             }
@@ -2430,7 +2431,7 @@ function viewTrainerClients(trainerId) {
     });
 
     // Convertir el Map a array
-    const assignedClients = Array.from(clientsMap.values());
+    const assignedClients = Array.from(clientSessions.values());
 
     // Crear contenido del modal
     let modalContent = `

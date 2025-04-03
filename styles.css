@@ -521,6 +521,15 @@ table th, table td {
     .dashboard-stats {
         grid-template-columns: 1fr;
     }
+    
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+    }
+    
+    .tab-buttons {
+        flex-direction: column;
+    }
 }
 
 /* Invalid State Styles */

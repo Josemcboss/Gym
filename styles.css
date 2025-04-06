@@ -8,6 +8,7 @@
     --danger: #ef4444;
     --warning: #f59e0b;
     --info: #3b82f6;
+    --border-color: #cbd5e1;
 }
 
 * {
@@ -520,15 +521,6 @@ table th, table td {
     
     .dashboard-stats {
         grid-template-columns: 1fr;
-    }
-    
-    .modal-content {
-        width: 95%;
-        margin: 10px;
-    }
-    
-    .tab-buttons {
-        flex-direction: column;
     }
 }
 

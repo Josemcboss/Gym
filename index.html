@@ -5,46 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title> - GymManagement</title>
     <link rel="stylesheet" href="styles.css">
+    <script defer src="scripts.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
 </head>
-<script src="js/config.js"></script>
-<script src="js/data.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/notifications.js"></script>
-<script src="js/modals.js"></script>
-<script src="js/validations.js"></script>
-<script src="js/dashboard.js"></script>
-<script src="js/clients.js"></script>
-<script src="js/memberships.js"></script>
-<script src="js/trainers.js"></script>
-<script src="js/attendance.js"></script>
-<script src="js/payments.js"></script>
-<script src="js/reports.js"></script>
-<script src="js/invoice.js"></script>
-<script src="js/eventListeners.js"></script>
-<script src="js/app.js"></script>
-<script>
-    // Only keep the initialization code here
-    document.addEventListener('DOMContentLoaded', function() {
-        if (!localStorage.getItem('gymData')) {
-            initializeLocalStorage();
-        }
-        loadClientsTable();
-        loadMembershipsTable();
-        loadAttendanceTable();
-        loadExpiringMemberships();
-        loadPaymentMembershipSelect();
-        loadPaymentsTable();
-        loadTrainersTable();
-        loadRecentAttendance();
-        loadClientSelect();
-        loadClientMembershipSelect();
-        loadTrainerSelect();
-        loadMembershipTypeSelect();
-        updateDashboardStats();
-    });
-</script>
+
 <body>
     <div class="container">
         <!-- Sidebar -->
@@ -358,6 +322,7 @@
                                 <th>Cédula</th>
                                 <th>Nombre</th>
                                 <th>Especialidad</th>
+                                <th>Género</th>
                                 <th>Email</th>
                                 <th>Teléfono</th>
                                 <th>Clientes Asignados</th>
@@ -547,9 +512,10 @@
                             <table>
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
+                                        <th>Cédula</th>
                                         <th>Nombre</th>
                                         <th>Especialidad</th>
+                                        <th>Género</th>
                                         <th>Sesiones Totales</th>
                                         <th>Clientes Activos</th>
                                         <th>Última Sesión</th>
@@ -611,7 +577,6 @@
                     <select class="form-control" id="client-gender">
                         <option value="M">Masculino</option>
                         <option value="F">Femenino</option>
-                        <option value="O">Otro</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -802,14 +767,15 @@
                 <input type="hidden" id="trainer-id">
                 <div class="form-group">
                     <label class="form-label" for="trainer-cedula">Cédula</label>
-                    <input type="text" class="form-control" id="trainer-cedula" 
-                           maxlength="11" pattern="[0-9]*" required 
-                           placeholder="Ingrese la cédula">
-                </div>
+                    <input type="text" class="form-control" id="trainer-cedula" maxlength="11" required>
+                    <small id="trainer-cedula-count" class="text-muted">0 / 11</small>
+                    <small id="trainer-cedula-warning" class="text-danger" style="display: none;">Máximo 11 caracteres permitidos.</small>
+                </div>                  
                 <div class="form-group">
                     <label class="form-label" for="trainer-name">Nombre</label>
-                    <input type="text" class="form-control" id="trainer-name" 
-                           pattern="[A-Za-záéíóúÁÉÍÓÚñÑ\s]+" required>
+                    <input type="text" class="form-control" id="trainer-name" maxlength="50" required>
+                    <small id="trainer-name-count" class="text-muted">0 / 50</small>
+                    <small id="trainer-name-warning" class="text-danger" style="display: none;">Máximo 50 caracteres permitidos.</small>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-specialty">Especialidad</label>
@@ -818,25 +784,33 @@
                         <option value="Cardio">Cardio</option>
                         <option value="Zumba">Zumba</option>
                         <option value="Pesas">Pesas</option>
-                        <option value="Funcional">Funcional</option>
-                        <option value="CrossFit">CrossFit</option>
-                        <option value="Yoga">Yoga</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="trainer-gender">Género</label>
+                    <select class="form-control" id="trainer-gender" required>
+                        <option value="">Seleccionar género</option>
+                        <option value="M">Masculino</option>
+                        <option value="F">Femenino</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-email">Correo electrónico</label>
-                    <input type="email" class="form-control" id="trainer-email" required>
+                    <input type="email" class="form-control" id="trainer-email" maxlength="75" required>
+                    <small id="trainer-email-count" class="text-muted">0 / 75</small>
+                    <small id="trainer-email-warning" class="text-danger" style="display: none;">Máximo 75 caracteres permitidos.</small>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-phone">Teléfono</label>
-                    <input type="tel" class="form-control" id="trainer-phone" 
-                           maxlength="10" pattern="[0-9]*" required 
-                           placeholder="Solo números">
+                    <input type="tel" class="form-control" id="trainer-phone" maxlength="10" required>
+                    <small id="trainer-phone-count" class="text-muted">0 / 10</small>
+                    <small id="trainer-phone-warning" class="text-danger" style="display: none;">Máximo 10 caracteres permitidos.</small>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="trainer-schedule">Horario</label>
-                    <input type="text" class="form-control" id="trainer-schedule" 
-                           placeholder="Ej: Lunes a Viernes, 8am - 4pm">
+                    <input type="text" class="form-control" id="trainer-schedule" maxlength="50">
+                    <small id="trainer-schedule-count" class="text-muted">0 / 50</small>
+                    <small id="trainer-schedule-warning" class="text-danger" style="display: none;">Máximo 50 caracteres permitidos.</small>
                 </div>
                 <div class="form-group">
                     <button type="submit" class="btn btn-primary">Guardar</button>
@@ -1091,6 +1065,33 @@ function saveGymData(data) {
             return date.toLocaleString();
         }
 
+        // Calculate membership end date
+        function calculateEndDate(startDate, duration) {
+    const date = new Date(startDate + 'T00:00:00');
+    
+    switch(duration) {
+        case 'mensual':
+            date.setMonth(date.getMonth() + 1);
+            break;
+        case 'trimestral':
+            date.setMonth(date.getMonth() + 3);
+            break;
+        case 'semestral':
+            date.setMonth(date.getMonth() + 6);
+            break;
+        case 'anual':
+            date.setFullYear(date.getFullYear() + 1);
+            break;
+    }
+    
+    return date.toISOString().split('T')[0];
+}
+
+        // Check if a membership is active
+        function isMembershipActive(startDate, duration) {
+            const endDate = new Date(calculateEndDate(startDate, duration));
+            return new Date() <= endDate;
+        }
 
         // Get client by ID
 // Fix the getClientByCedula function
@@ -1225,40 +1226,15 @@ document.getElementById('payment-membership').addEventListener('change', functio
 document.getElementById('payment-client').addEventListener('change', function () {
     const cedula = this.value;
     const client = getClientByCedula(cedula);
-    const nameInput = document.getElementById(targetInputId);
-    const membershipInput = document.getElementById('payment-membership');
-    const amountInput = document.getElementById('payment-amount');
     
-    if (nameInput) {
-        nameInput.value = client ? client.name : '';
+    if (client) {
+        document.getElementById('payment-client-name').value = client.name;
+        // Si quieres mostrar también la cédula en un campo oculto o de solo lectura:
+        // document.getElementById('payment-client-cedula').value = client.cedula;
+    } else {
+        document.getElementById('payment-client-name').value = '';
+        // document.getElementById('payment-client-cedula').value = '';
     }
-    
-    if (client && membershipInput && amountInput) {
-        const membership = getMembershipById(client.membership_id);
-        if (membership) {
-            membershipInput.value = membership.id;
-            amountInput.value = membership.price;
-        }
-    }
-}
-
-// Agregar event listener para el formulario de pago
-document.getElementById('payment-form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    const cedula = document.getElementById('payment-client').value;
-    if (!cedula) {
-        alert('Por favor seleccione un cliente');
-        return;
-    }
-
-    const client = getClientByCedula(cedula);
-    if (!client) {
-        alert('Cliente no encontrado');
-        return;
-    }
-
-    // ... resto del código del formulario de pago ...
 });
 
         document.getElementById('client-cedula').addEventListener('input', function(e) {
@@ -1470,9 +1446,10 @@ function loadPaymentsTable() {
         data.trainers.forEach(trainer => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${trainer.id}</td>
+                <td>${trainer.cedula}</td>
                 <td>${trainer.name}</td>
                 <td>${trainer.specialty}</td>
+                <td>${trainer.gender === 'M' ? 'Masculino' : 'Femenino'}</td>
                 <td>${trainer.email}</td>
                 <td>${trainer.phone}</td>
                 <td>${trainer.schedule || 'No definido'}</td>
@@ -1524,7 +1501,33 @@ function loadPaymentsTable() {
     document.getElementById('client-view-name').textContent = `Cliente: ${client.name}`;
 
     // Load attendance history
+     // Load attendance history
+     const attendanceTable = document.getElementById('client-attendance-table');
+    attendanceTable.innerHTML = '';
+    
+    const clientAttendance = data.attendance
+        .filter(a => a.client_cedula === client.cedula)
+        .sort((a, b) => new Date(`${b.date} ${b.time}`) - new Date(`${a.date} ${a.time}`));
 
+    if (clientAttendance.length === 0) {
+        attendanceTable.innerHTML = '<tr><td colspan="4" class="text-center">No hay registros de asistencia</td></tr>';
+    } else {
+        clientAttendance.forEach(attendance => {
+            const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${attendance.client_cedula}</td>
+                <td>${formatDateTime(attendance.date, attendance.time)}</td>
+                <td>${trainer ? trainer.name : 'Sin entrenador'}</td>
+                <td>
+                    <span class="badge ${attendance.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
+                        ${attendance.status}
+                    </span>
+                </td>
+            `;
+            attendanceTable.appendChild(row);
+        });
+    }
  // Load payment history
  const paymentsTable = document.getElementById('client-payments-table');
     paymentsTable.innerHTML = '';
@@ -1563,24 +1566,148 @@ function loadPaymentsTable() {
     openModal('client-view-modal');
 }
 
-    // Modificar la función editTrainer
-function editTrainer(trainerId) {
-    const data = getGymData();
-    const trainer = data.trainers.find(t => t.id === trainerId);
-    
-    if (trainer) {
-        document.getElementById('trainer-modal-title').textContent = 'Editar Entrenador';
-        document.getElementById('trainer-id').value = trainer.id;
-        document.getElementById('trainer-cedula').value = trainer.cedula;
-        document.getElementById('trainer-name').value = trainer.name;
-        document.getElementById('trainer-specialty').value = trainer.specialty;
-        document.getElementById('trainer-email').value = trainer.email;
-        document.getElementById('trainer-phone').value = trainer.phone;
-        document.getElementById('trainer-schedule').value = trainer.schedule || '';
+
+    // Edit client
+    function editClient(cedula) {
+        const data = getGymData();
+        const client = data.clients.find(c => c.cedula === cedula);
         
-        openModal('trainer-modal');
+        if (client) {
+            // Set modal title
+            document.getElementById('client-modal-title').textContent = 'Editar Cliente';
+            
+            // Fill form with client data
+            document.getElementById('client-cedula').value = client.cedula;
+            document.getElementById('client-cedula').dataset.originalCedula = client.cedula;
+            document.getElementById('client-name').value = client.name;
+            document.getElementById('client-email').value = client.email;
+            document.getElementById('client-phone').value = client.phone;
+            document.getElementById('client-birthdate').value = client.birthdate;
+            document.getElementById('client-gender').value = client.gender;
+            document.getElementById('client-membership').value = client.membership_id;
+            document.getElementById('client-start-date').value = client.start_date;
+            
+            // Show modal
+            openModal('client-modal');
+        }
+    }
+
+    // Delete client
+    function deleteClient(cedula) {
+        if (confirm('¿Estás seguro de que deseas eliminar este cliente?')) {
+            const data = getGymData();
+            data.clients = data.clients.filter(c => c.cedula !== cedula);
+            saveGymData(data);
+            loadClientsTable();
+            loadClientSelect();
+            updateDashboardStats();
+        }
+    }
+
+    // Edit membership
+    function editMembership(membershipId) {
+        const data = getGymData();
+        const membership = data.memberships.find(m => m.id === membershipId);
+        
+        if (membership) {
+            // Set modal title
+            document.getElementById('membership-modal-title').textContent = 'Editar Membresía';
+            
+            // Fill form with membership data
+            document.getElementById('membership-id').value = membership.id;
+            document.getElementById('membership-name').value = membership.name;
+            document.getElementById('membership-description').value = membership.description;
+            document.getElementById('membership-duration').value = membership.duration;
+            document.getElementById('membership-price').value = membership.price;
+            
+            // Show modal
+            openModal('membership-modal');
+        }
+    }
+
+    // Delete membership
+    function deleteMembership(membershipId) {
+        // Check if membership is being used by any client
+        const data = getGymData();
+        const clientUsingMembership = data.clients.some(c => c.membership_id === membershipId);
+        
+        if (clientUsingMembership) {
+            alert('No se puede eliminar esta membresía porque está siendo utilizada por al menos un cliente.');
+            return;
+        }
+        
+        if (confirm('¿Estás seguro de que deseas eliminar esta membresía?')) {
+            data.memberships = data.memberships.filter(m => m.id !== membershipId);
+            saveGymData(data);
+            loadMembershipsTable();
+            loadClientMembershipSelect();
+            loadPaymentMembershipSelect();
+            loadMembershipTypeSelect();
+        }
+    }
+
+    // Edit attendance
+    function editAttendance(attendanceId) {
+    const data = getGymData();
+    const attendance = data.attendance.find(a => a.id === attendanceId);
+    
+    if (attendance) {
+        document.getElementById('attendance-modal-title').textContent = 'Editar Asistencia';
+        document.getElementById('attendance-id').value = attendance.id;
+        document.getElementById('attendance-client').value = attendance.client_cedula;
+        document.getElementById('attendance-date').value = attendance.date;
+        document.getElementById('attendance-time').value = attendance.time;
+        document.getElementById('attendance-trainer').value = attendance.trainer_id || '';
+        document.getElementById('attendance-status').value = attendance.status;
+        
+        // Actualizar el nombre del cliente
+        const client = getClientByCedula(attendance.client_cedula);
+        if (client) {
+            document.getElementById('attendance-client-name').value = client.name;
+        }
+        
+        openModal('attendance-modal');
     }
 }
+    // Delete attendance
+    function deleteAttendance(attendanceId) {
+        if (confirm('¿Estás seguro de que deseas eliminar este registro de asistencia?')) {
+            const data = getGymData();
+            data.attendance = data.attendance.filter(a => a.id !== attendanceId);
+            saveGymData(data);
+            loadAttendanceTable();
+            
+            // Also refresh the attendance filter if it's active
+            const clientFilter = document.getElementById('attendance-client-filter').value;
+            if (clientFilter) {
+                filterAttendanceByClient(clientFilter);
+            }
+        }
+    }
+
+    // Edit trainer
+    function editTrainer(trainerId) {
+        const data = getGymData();
+        const trainer = data.trainers.find(t => t.id === trainerId);
+        
+        if (trainer) {
+            // Set modal title
+            document.getElementById('trainer-modal-title').textContent = 'Editar Entrenador';
+            
+            // Fill form with trainer data
+            document.getElementById('trainer-id').value = trainer.id;
+            document.getElementById('trainer-cedula').value = trainer.cedula;
+            document.getElementById('trainer-name').value = trainer.name;
+            document.getElementById('trainer-specialty').value = trainer.specialty;
+            document.getElementById('trainer-gender').value = trainer.gender;
+            document.getElementById('trainer-email').value = trainer.email;
+            document.getElementById('trainer-phone').value = trainer.phone;
+            document.getElementById('trainer-schedule').value = trainer.schedule || '';
+            
+            // Show modal
+            openModal('trainer-modal');
+        }
+    }
 
     // Delete trainer
     function deleteTrainer(trainerId) {
@@ -1693,7 +1820,51 @@ document.getElementById('payment-form').addEventListener('submit', function (e) 
 });
 
     // Filter attendance by client
-
+// Filter attendance by client
+function filterAttendanceByClient(clientId) {
+    const data = getGymData();
+    const tableBody = document.getElementById('attendance-table');
+    tableBody.innerHTML = '';
+    
+    let filteredAttendance = data.attendance;
+    
+    if (clientId) {
+        // Fix: Use clientId parameter instead of undefined cedula variable
+        filteredAttendance = data.attendance.filter(a => 
+            a.client_cedula.toString() === clientId.toString()
+        );
+    }
+    
+    // Sort by date (newest first)
+    filteredAttendance.sort((a, b) => {
+        const dateA = new Date(`${a.date}T${a.time}`);
+        const dateB = new Date(`${b.date}T${b.time}`);
+        return dateB - dateA;
+    });
+    
+    filteredAttendance.forEach(attendance => {
+        const client = getClientByCedula(attendance.client_cedula);
+        const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${attendance.client_cedula}</td>
+            <td>${client ? client.name : 'Cliente eliminado'}</td>
+            <td>${formatDateTime(attendance.date, attendance.time)}</td>
+            <td>${trainer ? trainer.name : 'Ninguno'}</td>
+            <td>
+                <span class="badge ${attendance.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
+                    ${attendance.status}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-warning" onclick="editAttendance(${attendance.id})">Editar</button>
+                <button class="btn btn-danger" onclick="deleteAttendance(${attendance.id})">Eliminar</button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
     const NotificationSystem = {
     show: function(message, type = 'info') {
         const notification = document.createElement('div');
@@ -2188,7 +2359,6 @@ function getLastAttendance(cedula) {
     const trainerId = document.getElementById('trainer-report-trainer').value;
     const data = getGymData();
     
-    // Filtrar entrenadores
     let filteredTrainers = trainerId ? 
         data.trainers.filter(t => t.id.toString() === trainerId) : 
         data.trainers;
@@ -2197,7 +2367,7 @@ function getLastAttendance(cedula) {
     tableBody.innerHTML = '';
 
     if (filteredTrainers.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron entrenadores</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="7" class="text-center">No se encontraron entrenadores</td></tr>';
         return;
     }
 
@@ -2208,32 +2378,33 @@ function getLastAttendance(cedula) {
             a.status === 'Confirmada'
         );
 
-        // Obtener clientes únicos y activos
-        const activeClients = new Set();
+        // Obtener la última sesión confirmada
+        const lastSession = trainerSessions.length > 0 ? 
+            [...trainerSessions].sort((a, b) => 
+                new Date(`${b.date} ${b.time}`) - new Date(`${a.date} ${a.time}`)
+            )[0] : null;
+
+        // Obtener clientes activos únicos que han tenido sesiones con este entrenador
+        const activeClientSet = new Set();
         trainerSessions.forEach(session => {
             const client = getClientByCedula(session.client_cedula);
             if (client) {
                 const membership = getMembershipById(client.membership_id);
                 if (membership && isMembershipActive(client.start_date, membership.duration)) {
-                    activeClients.add(client.cedula);
+                    activeClientSet.add(client.cedula);
                 }
             }
         });
 
-        // Obtener la última sesión
-        const lastSession = trainerSessions.length > 0 ? 
-            trainerSessions.sort((a, b) => 
-                new Date(`${b.date} ${b.time}`) - new Date(`${a.date} ${a.time}`)
-            )[0] : null;
-
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${trainer.id}</td>
+            <td>${trainer.cedula}</td>
             <td>${trainer.name}</td>
             <td>${trainer.specialty}</td>
+            <td>${trainer.gender === 'M' ? 'Masculino' : 'Femenino'}</td>
             <td>${trainerSessions.length}</td>
             <td>
-                ${activeClients.size}
+                ${activeClientSet.size}
                 <button class="btn btn-info btn-sm ms-2" onclick="viewTrainerClients(${trainer.id})">
                     <i class="bi bi-eye"></i> Ver Clientes
                 </button>
@@ -2244,8 +2415,7 @@ function getLastAttendance(cedula) {
     });
 }
 
-// Función para ver los clientes asignados a un entrenador
-// Función para ver los clientes asignados a un entrenador
+// Reemplazar la función viewTrainerClients()
 function viewTrainerClients(trainerId) {
     const data = getGymData();
     const trainer = data.trainers.find(t => t.id === trainerId);
@@ -2255,47 +2425,50 @@ function viewTrainerClients(trainerId) {
         return;
     }
 
-    // Obtener asistencias confirmadas del entrenador
-    const trainerAttendances = data.attendance.filter(a => 
+    // Obtener todas las sesiones confirmadas del entrenador
+    const trainerSessions = data.attendance.filter(a => 
         a.trainer_id === trainerId && 
         a.status === 'Confirmada'
     );
 
-    // Obtener clientes únicos y sus últimas sesiones
-    const clientSessions = new Map();
-    
-    trainerAttendances.forEach(attendance => {
-        const client = getClientByCedula(attendance.client_cedula);
+    // Crear un Map para mantener la información más reciente de cada cliente
+    const activeClientsMap = new Map();
+
+    // Procesar todas las sesiones para encontrar clientes activos
+    trainerSessions.forEach(session => {
+        const client = getClientByCedula(session.client_cedula);
         if (client) {
             const membership = getMembershipById(client.membership_id);
             if (membership && isMembershipActive(client.start_date, membership.duration)) {
-                const currentDate = new Date(attendance.date);
-                const existingDate = clientSessions.get(client.cedula)?.lastSession;
+                const sessionDate = new Date(`${session.date} ${session.time}`);
                 
-                if (!existingDate || currentDate > new Date(existingDate)) {
-                    clientSessions.set(client.cedula, {
+                if (!activeClientsMap.has(client.cedula) || 
+                    sessionDate > new Date(activeClientsMap.get(client.cedula).lastSession)) {
+                    activeClientsMap.set(client.cedula, {
                         client,
-                        lastSession: attendance.date,
-                        membership
+                        membership,
+                        lastSession: `${session.date} ${session.time}`
                     });
                 }
             }
         }
     });
 
-    // Convertir el Map a array
-    const assignedClients = Array.from(clientSessions.values());
+    // Convertir el Map a array y ordenar por fecha de última sesión
+    const activeClients = Array.from(activeClientsMap.values())
+        .sort((a, b) => new Date(b.lastSession) - new Date(a.lastSession));
 
     // Crear contenido del modal
     let modalContent = `
         <div class="modal-header">
-            <h3>Clientes Asignados a ${trainer.name}</h3>
+            <h3>Clientes Activos de ${trainer.name}</h3>
             <button class="modal-close" data-close="trainer-clients-modal">&times;</button>
         </div>
         <div class="modal-body">
             <div class="trainer-info mb-3">
                 <p><strong>Especialidad:</strong> ${trainer.specialty}</p>
-                <p><strong>Total de clientes activos:</strong> ${assignedClients.length}</p>
+                <p><strong>Total de clientes activos:</strong> ${activeClients.length}</p>
+                <p><strong>Total de sesiones:</strong> ${trainerSessions.length}</p>
             </div>
             <table class="table">
                 <thead>
@@ -2309,16 +2482,16 @@ function viewTrainerClients(trainerId) {
                 <tbody>
     `;
 
-    if (assignedClients.length === 0) {
-        modalContent += '<tr><td colspan="4" class="text-center">No hay clientes asignados actualmente</td></tr>';
+    if (activeClients.length === 0) {
+        modalContent += '<tr><td colspan="4" class="text-center">No hay clientes activos actualmente</td></tr>';
     } else {
-        assignedClients.forEach(({client, lastSession, membership}) => {
+        activeClients.forEach(({client, membership, lastSession}) => {
             modalContent += `
                 <tr>
                     <td>${client.cedula}</td>
                     <td>${client.name}</td>
                     <td>${membership.name}</td>
-                    <td>${formatDate(lastSession)}</td>
+                    <td>${formatDateTime(lastSession)}</td>
                 </tr>
             `;
         });
@@ -2445,10 +2618,26 @@ function calculateEndDate(startDate, duration) {
     return date.toISOString().split('T')[0];
 }
 
+// Verifica si una membresía está activa
+function isMembershipActive(startDate, duration) {
+    const endDate = new Date(calculateEndDate(startDate, duration));
+    return new Date() <= endDate;
+}
 
+// Obtiene un cliente por su cédula
+function getClientByCedula(cedula) {
+    const data = getGymData();
+    if (!cedula && cedula !== 0) return null;
+    return data.clients.find(client => 
+        client.cedula.toString() === cedula.toString()
+    );
+}
 
-
-
+// Obtiene una membresía por su ID
+function getMembershipById(id) {
+    const data = getGymData();
+    return data.memberships.find(membership => membership.id == id);
+}
 
 // Obtiene un entrenador por su ID
 function getTrainerById(id) {
@@ -2842,28 +3031,18 @@ function viewAttendanceDetails(attendanceId) {
     this.reset();
 });
    
-    // Modificar el evento submit del formulario de entrenador
-document.getElementById('trainer-form').addEventListener('submit', function(event) {
+    // Trainer form
+    document.getElementById('trainer-form').addEventListener('submit', function(event) {
     event.preventDefault();
     
     const data = getGymData();
     const trainerId = document.getElementById('trainer-id').value;
     
-    // Verificar si la cédula ya existe (excepto para el mismo entrenador en edición)
-    const cedula = document.getElementById('trainer-cedula').value;
-    const existingTrainer = data.trainers.find(t => 
-        t.cedula === cedula && t.id !== (trainerId ? parseInt(trainerId) : null)
-    );
-
-    if (existingTrainer) {
-        alert('Ya existe un entrenador con esta cédula');
-        return;
-    }
-
     const trainer = {
-        cedula: cedula,
+        cedula: document.getElementById('trainer-cedula').value,
         name: document.getElementById('trainer-name').value,
         specialty: document.getElementById('trainer-specialty').value,
+        gender: document.getElementById('trainer-gender').value,
         email: document.getElementById('trainer-email').value,
         phone: document.getElementById('trainer-phone').value,
         schedule: document.getElementById('trainer-schedule').value
@@ -2874,7 +3053,7 @@ document.getElementById('trainer-form').addEventListener('submit', function(even
         trainer.id = parseInt(trainerId);
         const index = data.trainers.findIndex(t => t.id === trainer.id);
         if (index !== -1) {
-            data.trainers[index] = {...data.trainers[index], ...trainer};
+            data.trainers[index] = trainer;
         }
     } else {
         // Add new trainer
@@ -2887,9 +3066,9 @@ document.getElementById('trainer-form').addEventListener('submit', function(even
     loadTrainerSelect();
     closeModal('trainer-modal');
     this.reset();
-    document.getElementById('trainer-id').value = '';
-});
-
+        document.getElementById('trainer-id').value = '';
+        });
+    
  
         // Payment form
         document.getElementById('payment-form').addEventListener('submit', function(event) {
@@ -3024,6 +3203,21 @@ document.getElementById('add-client-btn').addEventListener('click', function() {
     openModal('client-modal');
 });
 
+// Función para abrir un modal (usa display: flex, según tu CSS)
+function openModal(modalId) {
+    var modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+// Función para cerrar un modal
+function closeModal(modalId) {
+    var modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
 
 // Asigna un listener a todos los botones que tengan el atributo data-close,
 // para que al hacer clic cierren el modal correspondiente.
@@ -3394,7 +3588,87 @@ function printInvoice() {
     printWindow.print();
     printWindow.close();
 }
-    </script>
 
+document.getElementById('trainer-cedula').addEventListener('input', function () {
+  this.value = this.value.replace(/[^0-9]/g, ''); // Solo números
+
+  if (this.value.length > 11) {
+    this.value = this.value.slice(0, 11); // Limita a 11
+  }
+
+  const length = this.value.length;
+  const counter = document.getElementById('trainer-cedula-count');
+  const warning = document.getElementById('trainer-cedula-warning');
+
+  counter.textContent = `${length} / 11`;
+  counter.style.color = length >= 10 ? 'red' : '';
+  warning.style.display = length === 11 ? 'inline' : 'none';
+});
+
+// Event listener para el nombre del entrenador
+document.getElementById('trainer-name').addEventListener('input', function () {
+  this.value = this.value.replace(/[0-9]/g, ''); // Eliminar números
+
+  if (this.value.length > 50) {
+    this.value = this.value.slice(0, 50); // Limita a 50
+  }
+
+  const length = this.value.length;
+  const counter = document.getElementById('trainer-name-count');
+  const warning = document.getElementById('trainer-name-warning');
+
+  counter.textContent = `${length} / 50`;
+  counter.style.color = length >= 45 ? 'red' : '';
+  warning.style.display = length === 50 ? 'inline' : 'none';
+});
+
+// Event listener para el correo electrónico
+document.getElementById('trainer-email').addEventListener('input', function () {
+  if (this.value.length > 75) {
+    this.value = this.value.slice(0, 75); // Limita a 75
+  }
+
+  const length = this.value.length;
+  const counter = document.getElementById('trainer-email-count');
+  const warning = document.getElementById('trainer-email-warning');
+
+  counter.textContent = `${length} / 75`;
+  counter.style.color = length >= 70 ? 'red' : '';
+  warning.style.display = length === 75 ? 'inline' : 'none';
+});
+
+// Event listener para el teléfono
+document.getElementById('trainer-phone').addEventListener('input', function () {
+  this.value = this.value.replace(/[^0-9]/g, ''); // Solo números
+
+  if (this.value.length > 10) {
+    this.value = this.value.slice(0, 10); // Limita a 10
+  }
+
+  const length = this.value.length;
+  const counter = document.getElementById('trainer-phone-count');
+  const warning = document.getElementById('trainer-phone-warning');
+
+  counter.textContent = `${length} / 10`;
+  counter.style.color = length >= 9 ? 'red' : '';
+  warning.style.display = length === 10 ? 'inline' : 'none';
+});
+
+// Event listener para el horario
+document.getElementById('trainer-schedule').addEventListener('input', function () {
+  if (this.value.length > 50) {
+    this.value = this.value.slice(0, 50); // Limita a 50
+  }
+
+  const length = this.value.length;
+  const counter = document.getElementById('trainer-schedule-count');
+  const warning = document.getElementById('trainer-schedule-warning');
+
+  counter.textContent = `${length} / 50`;
+  counter.style.color = length >= 45 ? 'red' : '';
+  warning.style.display = length === 50 ? 'inline' : 'none';
+});
+
+    </script>
 </body>
 </html>

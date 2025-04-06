@@ -2345,6 +2345,22 @@ function exportReport(type) {
             break;
     }
     
+    function validateDataIntegrity() {
+    const data = getGymData();
+    
+    // Verificar IDs únicos en pagos
+    const paymentIds = data.payments.map(p => p.id);
+    const uniqueIds = new Set(paymentIds);
+    
+    if (paymentIds.length !== uniqueIds.size) {
+        console.error("¡Error: Hay IDs duplicados en pagos!");
+        // Aquí podrías llamar automáticamente a la función de corrección
+    }
+}
+
+// Ejecutar al cargar la página
+validateDataIntegrity();
+
     // Crear y descargar el archivo CSV
     const csvContent = "data:text/csv;charset=utf-8," + tableData.join("\n");
     const encodedUri = encodeURI(csvContent);

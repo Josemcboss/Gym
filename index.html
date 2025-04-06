@@ -3000,13 +3000,36 @@ function viewAttendanceDetails(attendanceId) {
     
     const data = getGymData();
     const attendanceId = document.getElementById('attendance-id').value;
+    const cedula = document.getElementById('attendance-client').value;
+    const date = document.getElementById('attendance-date').value;
+    const time = document.getElementById('attendance-time').value;
+    
+    // Validar que el cliente existe
+    const client = getClientByCedula(cedula);
+    if (!client) {
+        alert('Cliente no encontrado');
+        return;
+    }
+
+    // Validar que no exista una asistencia duplicada
+    const duplicateAttendance = data.attendance.find(a => 
+        a.client_cedula === cedula && 
+        a.date === date && 
+        a.time === time &&
+        (!attendanceId || a.id !== parseInt(attendanceId)) // Excluir la asistencia actual al editar
+    );
+
+    if (duplicateAttendance) {
+        alert('Ya existe un registro de asistencia para este cliente en la misma fecha y hora');
+        return;
+    }
     
     // Crear objeto de asistencia
     const attendance = {
         id: attendanceId ? parseInt(attendanceId) : generateId('attendance'),
-        client_cedula: document.getElementById('attendance-client').value,
-        date: document.getElementById('attendance-date').value,
-        time: document.getElementById('attendance-time').value,
+        client_cedula: cedula,
+        date: date,
+        time: time,
         trainer_id: document.getElementById('attendance-trainer').value || null,
         status: document.getElementById('attendance-status').value
     };
@@ -3029,6 +3052,7 @@ function viewAttendanceDetails(attendanceId) {
     
     closeModal('attendance-modal');
     this.reset();
+    document.getElementById('attendance-id').value = '';
 });
    
     // Trainer form

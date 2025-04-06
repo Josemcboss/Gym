@@ -700,11 +700,11 @@
                 <button class="modal-close" data-close="payment-modal">&times;</button>
             </div>
             <div id="payment-form-alert" class="alert hidden"></div>
-            <form id="payment-form">
+            <form id="payment-form" novalidate>
                 <input type="hidden" id="payment-id">
                 <div class="form-group">
                     <label class="form-label" for="payment-client">Cedula</label>
-                    <select class="form-control" id="payment-client" required>
+                    <select class="form-control" id="payment-client">
                         <option value="">Seleccionar cliente</option>
                         <!-- Clients will be loaded here -->
                     </select>
@@ -715,14 +715,14 @@
                   </div>                  
                 <div class="form-group">
                     <label class="form-label" for="payment-membership">Membresía</label>
-                    <select class="form-control" id="payment-membership" required>
+                    <select class="form-control" id="payment-membership">
                         <option value="">Seleccionar membresía</option>
                         <!-- Memberships will be loaded here -->
                     </select>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="payment-amount">Monto</label>
-                    <input type="number" class="form-control" id="payment-amount" required min="0" step="0.01" readonly>
+                    <input type="number" class="form-control" id="payment-amount" min="0" step="0.01" readonly>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="payment-discount">Descuento (%)</label>
@@ -730,7 +730,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="payment-method">Método de Pago</label>
-                    <select class="form-control" id="payment-method" required>
+                    <select class="form-control" id="payment-method">
                         <option value="Tarjeta">Tarjeta</option>
                         <option value="Efectivo">Efectivo</option>
                         <option value="Transferencia">Transferencia</option>
@@ -738,7 +738,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="payment-status">Estado</label>
-                    <select class="form-control" id="payment-status" required>
+                    <select class="form-control" id="payment-status">
                         <option value="Pagado">Pagado</option>
                         <option value="Pendiente">Pendiente</option>
                         <option value="Reembolsado">Reembolsado</option>
@@ -746,7 +746,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="payment-date">Fecha</label>
-                    <input type="date" class="form-control" id="payment-date" required>
+                    <input type="date" class="form-control" id="payment-date">
                 </div>
                 <div class="form-group">
                     <button type="submit" class="btn btn-primary">Guardar</button>
@@ -1999,6 +1999,83 @@ function advancedSearch(criteria) {
         });
     });
 }
+// Remover el event listener antiguo y reemplazar con uno nuevo que solo actualice la UI
+document.getElementById('attendance-client-filter').addEventListener('change', function() {
+    // No hacer nada aquí, el filtrado se hará cuando se presione el botón
+});
+
+// Modificar la función de validación del formulario de cliente
+document.getElementById('client-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const data = getGymData();
+    const cedula = document.getElementById('client-cedula').value;
+    const isEditing = document.getElementById('client-modal-title').textContent.includes('Editar');
+    const currentCedula = isEditing ? document.getElementById('client-cedula').dataset.originalCedula : null;
+
+    // Verificar si la cédula existe (excluyendo el cliente actual si estamos editando)
+    const cedulaExists = data.clients.some(client => 
+        client.cedula === cedula && (!isEditing || cedula !== currentCedula)
+    );
+
+    if (cedulaExists) {
+        alert('Ya existe un cliente con esta cédula');
+        return;
+    }
+
+    // Resto del código del formulario...
+    // ...existing code...
+});
+
+// Modificar la función de validación del formulario de entrenador
+document.getElementById('trainer-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+    
+    const data = getGymData();
+    const cedula = document.getElementById('trainer-cedula').value;
+    const trainerId = document.getElementById('trainer-id').value;
+    const isEditing = !!trainerId;
+
+    // Verificar si la cédula existe (excluyendo el entrenador actual si estamos editando)
+    const cedulaExists = data.trainers.some(trainer => 
+        trainer.cedula === cedula && (!isEditing || trainer.id !== parseInt(trainerId))
+    );
+
+    if (cedulaExists) {
+        alert('Ya existe un entrenador con esta cédula');
+        return;
+    }
+
+    // Resto del código del formulario...
+    // ...existing code...
+});
+
+// Modificar la función de filtrado de asistencias para que solo se ejecute con el botón
+function filterAttendanceTable() {
+    const dateFrom = document.getElementById('attendance-date-from').value;
+    const dateTo = document.getElementById('attendance-date-to').value;
+    const clientId = document.getElementById('attendance-client-filter').value;
+    
+    const data = getGymData();
+    let filteredAttendance = [...data.attendance];
+    
+    if (dateFrom) {
+        filteredAttendance = filteredAttendance.filter(attendance => attendance.date >= dateFrom);
+    }
+    
+    if (dateTo) {
+        filteredAttendance = filteredAttendance.filter(attendance => attendance.date <= dateTo);
+    }
+    
+    if (clientId) {
+        filteredAttendance = filteredAttendance.filter(attendance => 
+            attendance.client_cedula === clientId
+        );
+    }
+    
+    // Resto del código de filtrado...
+    // ...existing code...
+}
     // Handle attendance filter change
     document.getElementById('attendance-client-filter').addEventListener('change', function() {
         filterAttendanceByClient(this.value);
@@ -3250,8 +3327,12 @@ document.getElementById('add-attendance-btn') && document.getElementById('add-at
 document.getElementById('add-payment-btn') && document.getElementById('add-payment-btn').addEventListener('click', function() {
     document.getElementById('payment-form').reset();
     document.getElementById('payment-modal-title').textContent = 'Registrar Pago';
-    openModal('payment-modal');
     
+    // Establecer la fecha actual
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('payment-date').value = today;
+    
+    openModal('payment-modal');
 });
 
 // Funciones para abrir y cerrar modals
@@ -3669,6 +3750,140 @@ document.getElementById('trainer-schedule').addEventListener('input', function (
   warning.style.display = length === 50 ? 'inline' : 'none';
 });
 
+// Reemplazar o agregar la función de filtrado de pagos
+function filterPayments() {
+    const dateFrom = document.getElementById('payment-date-from').value;
+    const dateTo = document.getElementById('payment-date-to').value;
+    const status = document.getElementById('payment-status-filter').value;
+    
+    const data = getGymData();
+    let filteredPayments = [...data.payments];
+    
+    if (dateFrom) {
+        filteredPayments = filteredPayments.filter(payment => payment.date >= dateFrom);
+    }
+    
+    if (dateTo) {
+        filteredPayments = filteredPayments.filter(payment => payment.date <= dateTo);
+    }
+    
+    if (status) {
+        filteredPayments = filteredPayments.filter(payment => payment.status === status);
+    }
+    
+    const tableBody = document.getElementById('payments-table');
+    tableBody.innerHTML = '';
+    
+    if (filteredPayments.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="8" class="text-center">No se encontró ningún pago</td></tr>';
+        return;
+    }
+    
+    filteredPayments.forEach(payment => {
+        const client = getClientByCedula(payment.client_cedula);
+        const membership = getMembershipById(payment.membership_id);
+        const finalAmount = payment.amount * (1 - (payment.discount || 0) / 100);
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${payment.client_cedula}</td>
+            <td>${client ? client.name : 'Cliente no encontrado'}</td>
+            <td>${membership ? membership.name : 'Membresía no encontrada'}</td>
+            <td>$${finalAmount.toFixed(2)}</td>
+            <td>${payment.method}</td>
+            <td>
+                <span class="badge ${
+                    payment.status === 'Pagado' ? 'badge-success' : 
+                    payment.status === 'Pendiente' ? 'badge-warning' : 'badge-danger'
+                }">
+                    ${payment.status}
+                </span>
+            </td>
+            <td>${formatDate(payment.date)}</td>
+            <td>
+                <button class="btn btn-warning" onclick="editPayment(${payment.id})">Editar</button>
+                <button class="btn btn-danger" onclick="deletePayment(${payment.id})">Eliminar</button>
+                <button class="btn btn-info" onclick="viewInvoice(${payment.id})">
+                    <i class="bi bi-file-text"></i> Ver Factura
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+// Reemplazar o agregar la función de filtrado de asistencias
+function filterAttendanceTable() {
+    const dateFrom = document.getElementById('attendance-date-from').value;
+    const dateTo = document.getElementById('attendance-date-to').value;
+    const clientId = document.getElementById('attendance-client-filter').value;
+    
+    const data = getGymData();
+    let filteredAttendance = [...data.attendance];
+    
+    if (dateFrom) {
+        filteredAttendance = filteredAttendance.filter(attendance => attendance.date >= dateFrom);
+    }
+    
+    if (dateTo) {
+        filteredAttendance = filteredAttendance.filter(attendance => attendance.date <= dateTo);
+    }
+    
+    if (clientId) {
+        filteredAttendance = filteredAttendance.filter(attendance => attendance.client_cedula === clientId);
+    }
+    
+    // Ordenar por fecha más reciente
+    filteredAttendance.sort((a, b) => {
+        const dateA = new Date(`${a.date} ${a.time}`);
+        const dateB = new Date(`${b.date} ${b.time}`);
+        return dateB - dateA;
+    });
+    
+    const tableBody = document.getElementById('attendance-table');
+    tableBody.innerHTML = '';
+    
+    if (filteredAttendance.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontró ninguna asistencia</td></tr>';
+        return;
+    }
+    
+    filteredAttendance.forEach(attendance => {
+        const client = getClientByCedula(attendance.client_cedula);
+        const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${attendance.client_cedula}</td>
+            <td>${client ? client.name : 'Cliente no encontrado'}</td>
+            <td>${formatDateTime(attendance.date, attendance.time)}</td>
+            <td>${trainer ? trainer.name : 'Sin entrenador'}</td>
+            <td>
+                <span class="badge ${attendance.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
+                    ${attendance.status}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-warning" onclick="editAttendance(${attendance.id})">Editar</button>
+                <button class="btn btn-danger" onclick="deleteAttendance(${attendance.id})">Eliminar</button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+// Agregar los event listeners para los botones de filtrado
+document.addEventListener('DOMContentLoaded', function() {
+    const filterPaymentsBtn = document.getElementById('filter-payments-btn');
+    if (filterPaymentsBtn) {
+        filterPaymentsBtn.addEventListener('click', filterPayments);
+    }
+    
+    const filterAttendanceBtn = document.getElementById('filter-attendance-btn');
+    if (filterAttendanceBtn) {
+        filterAttendanceBtn.addEventListener('click', filterAttendanceTable);
+    }
+});
     </script>
 </body>
 </html>

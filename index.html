@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title> - GymManagement</title>
-    <link rel="stylesheet" href="styles.css">
-    <script defer src="scripts.js"></script>
+    <link rel="stylesheet" href="styles.css">f
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
 </head>
 
@@ -2089,45 +2088,49 @@ function filterAttendanceTable() {
 }
 
 // Modificar el event listener del formulario de asistencia
-document.getElementById('attendance-form').addEventListener('submit', function(event) {
+// Reemplazar todos los event listeners existentes del formulario de asistencia
+document.getElementById('attendance-form').removeEventListener('submit', handleAttendanceSubmit);
+document.getElementById('attendance-form').addEventListener('submit', handleAttendanceSubmit);
+
+function handleAttendanceSubmit(event) {
     event.preventDefault();
     
     const data = getGymData();
     const attendanceId = document.getElementById('attendance-id').value;
-    
-    // Validar campos obligatorios
-    const clientId = document.getElementById('attendance-client').value;
+    const clientCedula = document.getElementById('attendance-client').value;
     const date = document.getElementById('attendance-date').value;
     const time = document.getElementById('attendance-time').value;
     
-    if (!clientId || !date || !time) {
+    // Validaciones básicas
+    if (!clientCedula || !date || !time) {
         alert('Por favor complete todos los campos requeridos');
         return;
     }
-
-    // Verificar si el cliente existe y tiene membresía activa
-    const client = getClientByCedula(clientId);
+    
+    // Verificar si el cliente existe
+    const client = getClientByCedula(clientCedula);
     if (!client) {
         alert('Cliente no encontrado');
         return;
     }
-
+    
+    // Verificar si la membresía está activa
     const membership = getMembershipById(client.membership_id);
     if (!membership || !isMembershipActive(client.start_date, membership.duration)) {
         alert('El cliente no tiene una membresía activa');
         return;
     }
-
+    
     // Crear objeto de asistencia
     const attendance = {
         id: attendanceId ? parseInt(attendanceId) : generateId('attendance'),
-        client_cedula: clientId,
+        client_cedula: clientCedula,
         date: date,
         time: time,
         trainer_id: document.getElementById('attendance-trainer').value || null,
         status: document.getElementById('attendance-status').value
     };
-
+    
     if (attendanceId) {
         // Actualizar asistencia existente
         const index = data.attendance.findIndex(a => a.id === parseInt(attendanceId));
@@ -2137,20 +2140,18 @@ document.getElementById('attendance-form').addEventListener('submit', function(e
     } else {
         // Verificar si ya existe una asistencia para el mismo cliente en el mismo día
         const existingAttendance = data.attendance.find(a => 
-            a.client_cedula === clientId && 
+            a.client_cedula === clientCedula && 
             a.date === date
         );
-
-        if (existingAttendance) {
-            if (!confirm('Ya existe un registro de asistencia para este cliente en esta fecha. ¿Desea agregar otro?')) {
-                return;
-            }
+        
+        if (existingAttendance && !confirm('Ya existe un registro de asistencia para este cliente en esta fecha. ¿Desea agregar otro?')) {
+            return;
         }
-
+        
         // Agregar nueva asistencia
         data.attendance.push(attendance);
     }
-
+    
     // Guardar datos y actualizar UI
     saveGymData(data);
     loadAttendanceTable();
@@ -2162,9 +2163,9 @@ document.getElementById('attendance-form').addEventListener('submit', function(e
     
     // Cerrar modal y resetear formulario
     closeModal('attendance-modal');
-    this.reset();
+    document.getElementById('attendance-form').reset();
     document.getElementById('attendance-id').value = '';
-});
+}
 
     // Generate attendance report
     function generateAttendanceReport() {
@@ -3369,21 +3370,6 @@ document.getElementById('add-client-btn').addEventListener('click', function() {
     openModal('client-modal');
 });
 
-// Función para abrir un modal (usa display: flex, según tu CSS)
-function openModal(modalId) {
-    var modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'flex';
-    }
-}
-
-// Función para cerrar un modal
-function closeModal(modalId) {
-    var modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = 'none';
-    }
-}
 
 // Asigna un listener a todos los botones que tengan el atributo data-close,
 // para que al hacer clic cierren el modal correspondiente.

@@ -1021,17 +1021,14 @@ function initializeLocalStorage() {
 }
 function generateId(entity) {
     const data = getGymData();
-
-    // Asegurarse de que el contador exista
     if (!data.counters[entity]) {
-        console.warn(`Advertencia: Contador para '${entity}' no encontrado, inicializando en 1.`);
         data.counters[entity] = 1;
+    } else {
+        data.counters[entity]++;
     }
-
-    // Incrementar el contador y devolver el nuevo ID
-    const newId = data.counters[entity]++;
     saveGymData(data);
-    return newId;
+    // Siempre retornar número
+    return Number(data.counters[entity]);
 }
 
 function validateAttendanceIds() {
@@ -1674,51 +1671,20 @@ function loadPaymentsTable() {
         openModal('attendance-modal');
     }
 }
+
 function deleteAttendance(attendanceId) {
-    try {
-        // Validar y convertir ID
-        if (attendanceId === undefined || attendanceId === null) {
-            console.error('ID de asistencia inválido:', attendanceId);
-            alert('Error: ID de asistencia inválido');
-            return;
+    if (confirm('¿Estás seguro de que deseas eliminar este registro de asistencia?')) {
+        const data = getGymData();
+        // Asegurar comparación numérica
+        data.attendance = data.attendance.filter(a => a.id !== Number(attendanceId));
+        saveGymData(data);
+        loadAttendanceTable();
+        
+        // Refrescar filtros si están activos
+        const clientFilter = document.getElementById('attendance-client-filter').value;
+        if (clientFilter) {
+            filterAttendanceByClient(clientFilter);
         }
-
-        const numericId = Number(attendanceId);
-
-        if (isNaN(numericId)) {
-            console.error('ID de asistencia no es un número válido:', attendanceId);
-            alert('Error: ID de asistencia debe ser un número');
-            return;
-        }
-
-        if (confirm('¿Estás seguro de que deseas eliminar este registro de asistencia?')) {
-            const data = getGymData();
-
-            // Encontrar el registro específico primero
-            const recordToDelete = data.attendance.find(a => a.id === numericId);
-
-            if (!recordToDelete) {
-                console.error('Registro no encontrado para ID:', numericId);
-                alert('Error: Registro de asistencia no encontrado');
-                return;
-            }
-
-            console.log('Registro encontrado para eliminar:', recordToDelete);
-
-            // Filtrar usando comparación estricta de números
-            data.attendance = data.attendance.filter(a => a.id !== numericId);
-
-            // Guardar cambios y actualizar la interfaz
-            saveGymData(data);
-            loadAttendanceTable();
-            loadRecentAttendance();
-            updateDashboardStats();
-
-            console.log('Registro eliminado correctamente:', numericId);
-        }
-    } catch (error) {
-        console.error('Error al eliminar asistencia:', error);
-        alert('Error al intentar eliminar el registro');
     }
 }
     // Edit trainer
@@ -1890,7 +1856,7 @@ function filterAttendanceByClient(clientId) {
             </td>
             <td>
                 <button class="btn btn-warning" onclick="editAttendance(${attendance.id})">Editar</button>
-                <button class="btn btn-danger" onclick="deleteAttendance(${attendance.id})">Eliminar</button>
+                <button onclick="deleteAttendance(${Number(attendance.id)})">Eliminar</button>
             </td>
         `;
         tableBody.appendChild(row);
@@ -3329,11 +3295,12 @@ function updateDashboardStats() {
     document.getElementById('monthly-income').textContent = `$${monthlyIncome.toFixed(2)}`;
 }
 // Agregar después de las funciones existentes
+// Get the data first before filtering
 function searchClients() {
+    const data = getGymData(); // Add this line to get data
     const searchText = document.getElementById('search-client').value.toLowerCase();
     const searchCedula = document.getElementById('search-client-cedula').value.trim();
     const tableBody = document.getElementById('clients-table');
-    const data = getGymData();
     
     // Filtrar clientes
     const filteredClients = data.clients.filter(client => {
@@ -3476,6 +3443,15 @@ document.getElementById('client-phone').addEventListener('input', function () {
     warningElement.style.display = currentLength === maxLength ? 'inline' : 'none';
 });
 
+function deletePayment(paymentId) {
+    if (confirm('¿Estás seguro de que deseas eliminar este registro de pago?')) {
+        const data = getGymData();
+        // Asegurar comparación numérica
+        data.payments = data.payments.filter(p => p.id !== Number(paymentId));
+        saveGymData(data);
+        loadPaymentsTable();
+    }
+}
 
 // Función para ver la factura
 function viewInvoice(paymentId) {
@@ -3635,7 +3611,15 @@ document.getElementById('trainer-email').addEventListener('input', function () {
   counter.style.color = length >= 70 ? 'red' : '';
   warning.style.display = length === 75 ? 'inline' : 'none';
 });
-
+function deletePayment(paymentId) {
+    if (confirm('¿Estás seguro de que deseas eliminar este registro de pago?')) {
+        const data = getGymData();
+        // Convertir a número para comparación correcta
+        data.payments = data.payments.filter(p => p.id !== parseInt(paymentId));
+        saveGymData(data);
+        loadPaymentsTable();
+    }
+};
 // Event listener para el teléfono
 document.getElementById('trainer-phone').addEventListener('input', function () {
   this.value = this.value.replace(/[^0-9]/g, ''); // Solo números

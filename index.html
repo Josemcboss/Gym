@@ -939,6 +939,7 @@ document.addEventListener('DOMContentLoaded', function() {
         dashboardTab.click();
     }
     
+    validateAttendanceIds();
 });
 
 
@@ -1020,17 +1021,31 @@ function initializeLocalStorage() {
 }
 function generateId(entity) {
     const data = getGymData();
-    
+
+    // Asegurarse de que el contador exista
     if (!data.counters[entity]) {
         console.warn(`Advertencia: Contador para '${entity}' no encontrado, inicializando en 1.`);
         data.counters[entity] = 1;
-    } else {
-        data.counters[entity]++;
     }
 
+    // Incrementar el contador y devolver el nuevo ID
+    const newId = data.counters[entity]++;
     saveGymData(data);
-    return data.counters[entity];
+    return newId;
 }
+
+function validateAttendanceIds() {
+    const data = getGymData();
+    const ids = data.attendance.map(a => a.id);
+
+    // Verificar si hay IDs duplicados
+    const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+    if (duplicates.length > 0) {
+        console.error('IDs duplicados encontrados en asistencias:', duplicates);
+        alert('Error: Se encontraron IDs duplicados en las asistencias. Por favor, revise los datos.');
+    }
+}
+
 function saveGymData(data) {
     localStorage.setItem('gymData', JSON.stringify(data));
 }
@@ -1039,18 +1054,6 @@ function saveGymData(data) {
         function saveGymData(data) {
             localStorage.setItem('gymData', JSON.stringify(data));
         }
-
-        // Generate unique ID for different entities
-        function generateId(entity) {
-        const data = getGymData();
-        if (!data.counters[entity]) {
-        data.counters[entity] = 1; // Inicializa si no existe
-        } else {
-        data.counters[entity]++;
-        }
-        saveGymData(data);
-        return data.counters[entity];
-}
 
         // Format date for display
         function formatDate(dateString) {
@@ -1674,14 +1677,14 @@ function loadPaymentsTable() {
 function deleteAttendance(attendanceId) {
     try {
         // Validar y convertir ID
-        if (!attendanceId && attendanceId !== 0) {
+        if (attendanceId === undefined || attendanceId === null) {
             console.error('ID de asistencia inválido:', attendanceId);
             alert('Error: ID de asistencia inválido');
             return;
         }
 
-        const numericId = parseInt(attendanceId, 10);
-        
+        const numericId = Number(attendanceId);
+
         if (isNaN(numericId)) {
             console.error('ID de asistencia no es un número válido:', attendanceId);
             alert('Error: ID de asistencia debe ser un número');
@@ -1690,37 +1693,34 @@ function deleteAttendance(attendanceId) {
 
         if (confirm('¿Estás seguro de que deseas eliminar este registro de asistencia?')) {
             const data = getGymData();
-            
+
             // Encontrar el registro específico primero
             const recordToDelete = data.attendance.find(a => a.id === numericId);
-            
+
             if (!recordToDelete) {
                 console.error('Registro no encontrado para ID:', numericId);
                 alert('Error: Registro de asistencia no encontrado');
                 return;
             }
 
-            // Verificar antes del filtrado
-            console.log('Registros antes de eliminar:', data.attendance.length);
-            console.log('Intentando eliminar ID:', numericId);
+            console.log('Registro encontrado para eliminar:', recordToDelete);
 
             // Filtrar usando comparación estricta de números
             data.attendance = data.attendance.filter(a => a.id !== numericId);
 
-            // Verificar después del filtrado
-            console.log('Registros después de eliminar:', data.attendance.length);
-
+            // Guardar cambios y actualizar la interfaz
             saveGymData(data);
             loadAttendanceTable();
             loadRecentAttendance();
             updateDashboardStats();
+
+            console.log('Registro eliminado correctamente:', numericId);
         }
     } catch (error) {
         console.error('Error al eliminar asistencia:', error);
         alert('Error al intentar eliminar el registro');
     }
 }
-
     // Edit trainer
     function editTrainer(trainerId) {
     const data = getGymData();
@@ -2620,8 +2620,6 @@ function loadExpiringMemberships() {
                 <span class="expiration-badge ${
                     daysLeft <= 1 ? 'bg-danger-light' : 'bg-warning-light'
                 }">
-                    ${daysLeft === 0 ? 'Vence hoy' : `Vence en ${daysLeft} día(s)`}
-                </span>
             </td>
             <td>
                 <button class="btn btn-primary btn-sm" onclick="renewMembership('${client.cedula}')">

@@ -1021,14 +1021,30 @@ function initializeLocalStorage() {
 }
 function generateId(entity) {
     const data = getGymData();
-    if (!data.counters[entity]) {
-        data.counters[entity] = 1;
-    } else {
-        data.counters[entity]++;
+    
+    // Inicializar counters si no existe
+    if (!data.counters) {
+        data.counters = {};
     }
+    
+    // Inicializar el contador específico si no existe
+    if (!data.counters[entity]) {
+        // Encontrar el ID más alto existente
+        let maxId = 0;
+        if (entity === 'attendance') {
+            maxId = data.attendance.reduce((max, item) => 
+                Math.max(max, Number(item.id) || 0), 0);
+        }
+        data.counters[entity] = maxId;
+    }
+    
+    // Incrementar el contador
+    data.counters[entity]++;
+    
+    // Guardar el nuevo estado de los contadores
     saveGymData(data);
-    // Siempre retornar número
-    return Number(data.counters[entity]);
+    
+    return data.counters[entity];
 }
 
 function validateAttendanceIds() {
@@ -2956,21 +2972,30 @@ function viewAttendanceDetails(attendanceId) {
 
     // Crear nueva asistencia
     const newAttendance = {
-        id: attendanceId ? Number(attendanceId) : Number(generateId('attendance')),
+        id: attendanceId ? Number(attendanceId) : generateId('attendance'),
         client_cedula: cedula,
         date: date,
         time: time,
         trainer_id: trainerId ? Number(trainerId) : null,
         status: status
     };
-
+    console.log('Nueva asistencia con ID:', newAttendance.id);
     // Si es edición, actualizar el registro existente
     if (attendanceId) {
+        // Actualizar asistencia existente
         const index = data.attendance.findIndex(a => Number(a.id) === Number(attendanceId));
         if (index !== -1) {
             data.attendance[index] = newAttendance;
         }
     } else {
+        // Verificar que el ID no esté duplicado
+        const isDuplicate = data.attendance.some(a => Number(a.id) === Number(newAttendance.id));
+        if (isDuplicate) {
+            console.error('ID duplicado detectado:', newAttendance.id);
+            alert('Error en la generación de ID. Por favor, intente nuevamente.');
+            return;
+        }
+        
         // Agregar nueva asistencia
         data.attendance.push(newAttendance);
     }

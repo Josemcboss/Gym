@@ -1672,19 +1672,60 @@ function loadPaymentsTable() {
     }
 }
 
+// For attendance deletion
 function deleteAttendance(attendanceId) {
-    if (confirm('¿Estás seguro de que deseas eliminar este registro de asistencia?')) {
+    if (!confirm('¿Estás seguro de que deseas eliminar este registro de asistencia?')) {
+        return;
+    }
+
+    try {
         const data = getGymData();
-        // Asegurar comparación numérica
-        data.attendance = data.attendance.filter(a => a.id !== Number(attendanceId));
-        saveGymData(data);
-        loadAttendanceTable();
         
-        // Refrescar filtros si están activos
-        const clientFilter = document.getElementById('attendance-client-filter').value;
-        if (clientFilter) {
-            filterAttendanceByClient(clientFilter);
+        // Verificar que data.attendance es un array
+        if (!Array.isArray(data.attendance)) {
+            console.error('Error: data.attendance no es un array');
+            NotificationSystem.error('Error al eliminar el registro de asistencia');
+            return;
         }
+
+        // Guardar la cantidad de registros antes de eliminar
+        const beforeCount = data.attendance.length;
+        
+        // Convertir el ID a número y eliminar el registro
+        const idToDelete = Number(attendanceId);
+        console.log('Intentando eliminar asistencia con ID:', idToDelete);
+        
+        // Crear nuevo array sin el registro a eliminar
+        const newAttendance = data.attendance.filter(attendance => {
+            const currentId = Number(attendance.id);
+            console.log('Comparando con ID:', currentId, 'Son iguales:', currentId === idToDelete);
+            return currentId !== idToDelete;
+        });
+        
+        // Verificar si se eliminó algún registro
+        if (beforeCount === newAttendance.length) {
+            console.error('No se encontró el registro de asistencia con ID:', idToDelete);
+            NotificationSystem.error('No se encontró el registro de asistencia');
+            return;
+        }
+
+        // Actualizar data con el nuevo array
+        data.attendance = newAttendance;
+        
+        // Guardar los cambios
+        saveGymData(data);
+        
+        // Actualizar las vistas
+        loadAttendanceTable();
+        loadRecentAttendance();
+        updateDashboardStats();
+        
+        // Notificar éxito
+        NotificationSystem.success('Registro de asistencia eliminado correctamente');
+        
+    } catch (error) {
+        console.error('Error al eliminar la asistencia:', error);
+        NotificationSystem.error('Error al eliminar el registro de asistencia');
     }
 }
     // Edit trainer
@@ -1712,35 +1753,27 @@ function deleteAttendance(attendanceId) {
     }
 }
 
+// For trainer deletion
 function deleteTrainer(trainerId) {
-    const data = getGymData();
-    const trainer = data.trainers.find(t => t.id === parseInt(trainerId));
-    
-    if (!trainer) {
-        alert('Entrenador no encontrado');
-        return;
-    }
-
-    // Check if trainer is assigned to any attendance
-    const attendanceUsingTrainer = data.attendance.some(a => 
-        a.trainer_id === parseInt(trainerId) && 
-        a.status === 'Confirmada'
-    );
-    
-    if (attendanceUsingTrainer) {
-        alert('No se puede eliminar este entrenador porque está asignado a sesiones de entrenamiento.');
-        return;
-    }
-    
     if (confirm('¿Estás seguro de que deseas eliminar este entrenador?')) {
-        data.trainers = data.trainers.filter(t => t.id !== parseInt(trainerId));
+        const data = getGymData();
+        
+        // Verificar si el entrenador tiene asistencias asignadas
+        const hasAttendances = data.attendance.some(a => a.trainer_id === Number(trainerId));
+        
+        if (hasAttendances) {
+            alert('No se puede eliminar el entrenador porque tiene registros de asistencia asociados');
+            return;
+        }
+        
+        // Asegurar comparación numérica
+        data.trainers = data.trainers.filter(t => t.id !== Number(trainerId));
         saveGymData(data);
         loadTrainersTable();
-        loadTrainerSelect();
-        updateDashboardStats();
+        loadTrainerSelect(); // Actualizar los selectores de entrenadores
+        updateDashboardStats(); // Actualizar estadísticas del dashboard
     }
 }
-
     
     // Guardar o actualizar pago
 document.getElementById('payment-form').addEventListener('submit', function(event) {
@@ -2906,13 +2939,14 @@ function viewAttendanceDetails(attendanceId) {
         return;
     }
 
-    // Validar que el cliente existe y tiene membresía activa
+    // Validar que el cliente existe
     const client = getClientByCedula(cedula);
     if (!client) {
         alert('Cliente no encontrado');
         return;
     }
 
+    // Validar membresía activa
     const membership = getMembershipById(client.membership_id);
     if (!membership || !isMembershipActive(client.start_date, membership.duration)) {
         if (!confirm('El cliente no tiene una membresía activa. ¿Desea registrar la asistencia de todos modos?')) {
@@ -2920,66 +2954,43 @@ function viewAttendanceDetails(attendanceId) {
         }
     }
 
-    // Validar que la fecha no sea futura
-    const attendanceDateTime = new Date(`${date}T${time}`);
-    if (attendanceDateTime > new Date()) {
-        alert('No se pueden registrar asistencias con fecha futura');
-        return;
-    }
-
-    // Validar que no exista una asistencia duplicada
-    const duplicateAttendance = data.attendance.find(a => 
-        a.client_cedula === cedula && 
-        a.date === date && 
-        a.time === time &&
-        (!attendanceId || a.id !== parseInt(attendanceId))
-    );
-
-    if (duplicateAttendance) {
-        alert('Ya existe un registro de asistencia para este cliente en la misma fecha y hora');
-        return;
-    }
-
-    // Si se seleccionó un entrenador, validar que existe
-    if (trainerId) {
-        const trainer = getTrainerById(parseInt(trainerId));
-        if (!trainer) {
-            alert('El entrenador seleccionado no existe');
-            return;
-        }
-    }
-    
-    // Crear objeto de asistencia
-    const attendance = {
-        id: attendanceId ? parseInt(attendanceId) : generateId('attendance'),
+    // Crear nueva asistencia
+    const newAttendance = {
+        id: attendanceId ? Number(attendanceId) : Number(generateId('attendance')),
         client_cedula: cedula,
         date: date,
         time: time,
-        trainer_id: trainerId ? parseInt(trainerId) : null,
+        trainer_id: trainerId ? Number(trainerId) : null,
         status: status
     };
-    
+
+    // Si es edición, actualizar el registro existente
     if (attendanceId) {
-        // Actualizar asistencia existente
-        const index = data.attendance.findIndex(a => a.id === parseInt(attendanceId));
+        const index = data.attendance.findIndex(a => Number(a.id) === Number(attendanceId));
         if (index !== -1) {
-            data.attendance[index] = attendance;
+            data.attendance[index] = newAttendance;
         }
     } else {
         // Agregar nueva asistencia
-        data.attendance.push(attendance);
+        data.attendance.push(newAttendance);
     }
-    
+
+    // Guardar cambios
     saveGymData(data);
+
+    // Actualizar UI
     loadAttendanceTable();
     loadRecentAttendance();
     updateDashboardStats();
-    
+
+    // Cerrar modal y limpiar formulario
     closeModal('attendance-modal');
     this.reset();
     document.getElementById('attendance-id').value = '';
+
+    // Mostrar mensaje de éxito
+    NotificationSystem.success('Asistencia registrada correctamente');
 });
-   
     // Trainer form
     document.getElementById('trainer-form').addEventListener('submit', function(event) {
     event.preventDefault();

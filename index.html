@@ -490,6 +490,11 @@
                                     <!-- Data will be loaded here -->
                                 </tbody>
                             </table>
+                            <div class="summary">
+                                <p><strong>Activos:</strong> <span id="membership-report-active">0</span></p>
+                                <p><strong>Inactivos:</strong> <span id="membership-report-inactive">0</span></p>
+                                <p><strong>Total:</strong> <span id="membership-report-total">0</span></p>
+                            </div>
                         </div>
                     </div>
 
@@ -1382,6 +1387,9 @@ document.getElementById('payment-client').addEventListener('change', function ()
             <td>
                 <button class="btn btn-warning" onclick="editAttendance(${attendance.id})">Editar</button>
                 <button class="btn btn-danger" onclick="deleteAttendance(${attendance.id})">Eliminar</button>
+                <button class="btn btn-info" onclick="viewAttendanceDetails(${attendance.id})">
+                    <i class="bi bi-eye"></i> Ver Detalles
+                </button>
             </td>
         `;
         tableBody.appendChild(row);
@@ -1400,13 +1408,8 @@ function loadPaymentsTable() {
     });
     
     sortedPayments.forEach(payment => {
-        // Get client safely
         const client = payment.client_cedula ? getClientByCedula(payment.client_cedula) : null;
-        
-        // Get membership safely - THIS WAS MISSING
         const membership = payment.membership_id ? getMembershipById(payment.membership_id) : null;
-        
-        // Calculate final amount with default value
         const finalAmount = payment.amount ? payment.amount * (1 - (payment.discount || 0) / 100) : 0;
         
         const row = document.createElement('tr');
@@ -1417,10 +1420,9 @@ function loadPaymentsTable() {
             <td>$${finalAmount.toFixed(2)}</td>
             <td>${payment.method || 'N/A'}</td>
             <td>
-                <span class="badge ${
-                    payment.status === 'Pagado' ? 'badge-success' : 
-                    payment.status === 'Pendiente' ? 'badge-warning' : 'badge-danger'
-                }">
+                <span class="badge ${payment.status === 'Pagado' ? 'badge-success' : 
+                                    payment.status === 'Pendiente' ? 'badge-warning' : 
+                                    'badge-danger'}">
                     ${payment.status || 'Desconocido'}
                 </span>
             </td>
@@ -1607,7 +1609,7 @@ function loadPaymentsTable() {
     // Edit membership
     function editMembership(membershipId) {
         const data = getGymData();
-        const membership = data.memberships.find(m => m.id === membershipId);
+        const membership = getMembershipById(membershipId);
         
         if (membership) {
             // Set modal title
@@ -1669,113 +1671,98 @@ function loadPaymentsTable() {
         openModal('attendance-modal');
     }
 }
-    // Delete attendance
-    function deleteAttendance(attendanceId) {
-        if (confirm('¿Estás seguro de que deseas eliminar este registro de asistencia?')) {
-            const data = getGymData();
-            data.attendance = data.attendance.filter(a => a.id !== attendanceId);
-            saveGymData(data);
-            loadAttendanceTable();
-            
-            // Also refresh the attendance filter if it's active
-            const clientFilter = document.getElementById('attendance-client-filter').value;
-            if (clientFilter) {
-                filterAttendanceByClient(clientFilter);
-            }
+function deleteAttendance(attendanceId) {
+    if (confirm('¿Estás seguro de que deseas eliminar este registro de asistencia?')) {
+        const data = getGymData();
+        // Asegurarse que attendanceId sea un número
+        const idToDelete = parseInt(attendanceId);
+        
+        // Verificar que el registro existe antes de intentar eliminarlo
+        const attendanceExists = data.attendance.some(a => a.id === idToDelete);
+        
+        if (!attendanceExists) {
+            alert('Registro de asistencia no encontrado');
+            return;
+        }
+
+        // Filtrar solo la asistencia específica por su ID
+        data.attendance = data.attendance.filter(a => a.id !== idToDelete);
+        
+        saveGymData(data);
+        loadAttendanceTable();
+        loadRecentAttendance();
+        updateDashboardStats();
+        
+        // Actualizar también el filtro de asistencias si está activo
+        const clientFilter = document.getElementById('attendance-client-filter').value;
+        if (clientFilter) {
+            filterAttendanceByClient(clientFilter);
         }
     }
+}
 
     // Edit trainer
     function editTrainer(trainerId) {
-        const data = getGymData();
-        const trainer = data.trainers.find(t => t.id === trainerId);
+    const data = getGymData();
+    const trainer = data.trainers.find(t => t.id === parseInt(trainerId));
+    
+    if (trainer) {
+        document.getElementById('trainer-modal-title').textContent = 'Editar Entrenador';
         
-        if (trainer) {
-            // Set modal title
-            document.getElementById('trainer-modal-title').textContent = 'Editar Entrenador';
-            
-            // Fill form with trainer data
-            document.getElementById('trainer-id').value = trainer.id;
-            document.getElementById('trainer-cedula').value = trainer.cedula;
-            document.getElementById('trainer-name').value = trainer.name;
-            document.getElementById('trainer-specialty').value = trainer.specialty;
-            document.getElementById('trainer-gender').value = trainer.gender;
-            document.getElementById('trainer-email').value = trainer.email;
-            document.getElementById('trainer-phone').value = trainer.phone;
-            document.getElementById('trainer-schedule').value = trainer.schedule || '';
-            
-            // Show modal
-            openModal('trainer-modal');
-        }
+        // Fill form with trainer data
+        document.getElementById('trainer-id').value = trainerId;
+        document.getElementById('trainer-cedula').value = trainer.cedula;
+        document.getElementById('trainer-cedula').dataset.originalCedula = trainer.cedula;
+        document.getElementById('trainer-name').value = trainer.name;
+        document.getElementById('trainer-specialty').value = trainer.specialty;
+        document.getElementById('trainer-gender').value = trainer.gender;
+        document.getElementById('trainer-email').value = trainer.email;
+        document.getElementById('trainer-phone').value = trainer.phone;
+        document.getElementById('trainer-schedule').value = trainer.schedule || '';
+        
+        openModal('trainer-modal');
+    } else {
+        alert('Entrenador no encontrado');
     }
-
-    // Delete trainer
-    function deleteTrainer(trainerId) {
-        // Check if trainer is assigned to any attendance
-        const data = getGymData();
-        const attendanceUsingTrainer = data.attendance.some(a => a.trainer_id === trainerId);
-        
-        if (attendanceUsingTrainer) {
-            alert('No se puede eliminar este entrenador porque está asignado a sesiones de entrenamiento.');
-            return;
-        }
-        
-        if (confirm('¿Estás seguro de que deseas eliminar este entrenador?')) {
-            data.trainers = data.trainers.filter(t => t.id !== trainerId);
-            saveGymData(data);
-            loadTrainersTable();
-            loadTrainerSelect();
-        }
-    }
-
-    // Edit payment
-    function editPayment(paymentId) {
-        const data = getGymData();
-        const payment = data.payments.find(p => p.id === paymentId);
-        
-        if (payment) {
-            // Set modal title
-            document.getElementById('payment-modal-title').textContent = 'Editar Pago';
-            
-            // Fill form with payment data
-            document.getElementById('payment-id').value = payment.id;
-            document.getElementById('payment-client').value = payment.client_cedula;
-            document.getElementById('payment-membership').value = payment.membership_id;
-            document.getElementById('payment-amount').value = payment.amount;
-            document.getElementById('payment-discount').value = payment.discount;
-            document.getElementById('payment-method').value = payment.method;
-            document.getElementById('payment-status').value = payment.status;
-            document.getElementById('payment-date').value = payment.date;
-            
-            const client = getClientByCedula(payment.client_cedula);
-            if (client) {
-    document.getElementById('payment-client-name').value = client.name;
-} else {
-    document.getElementById('payment-client-name').value = '';
 }
 
-            // Show modal
-            openModal('payment-modal');
-        }
+function deleteTrainer(trainerId) {
+    const data = getGymData();
+    const trainer = data.trainers.find(t => t.id === parseInt(trainerId));
+    
+    if (!trainer) {
+        alert('Entrenador no encontrado');
+        return;
     }
 
-    // Delete payment
-    function deletePayment(paymentId) {
-        if (confirm('¿Estás seguro de que deseas eliminar este registro de pago?')) {
-            const data = getGymData();
-            data.payments = data.payments.filter(p => p.id !== paymentId);
-            saveGymData(data);
-            loadPaymentsTable();
-        }
+    // Check if trainer is assigned to any attendance
+    const attendanceUsingTrainer = data.attendance.some(a => 
+        a.trainer_id === parseInt(trainerId) && 
+        a.status === 'Confirmada'
+    );
+    
+    if (attendanceUsingTrainer) {
+        alert('No se puede eliminar este entrenador porque está asignado a sesiones de entrenamiento.');
+        return;
     }
     
-    // Guardar o actualizar pago
-document.getElementById('payment-form').addEventListener('submit', function (e) {
-    e.preventDefault();
+    if (confirm('¿Estás seguro de que deseas eliminar este entrenador?')) {
+        data.trainers = data.trainers.filter(t => t.id !== parseInt(trainerId));
+        saveGymData(data);
+        loadTrainersTable();
+        loadTrainerSelect();
+        updateDashboardStats();
+    }
+}
 
+    
+    // Guardar o actualizar pago
+document.getElementById('payment-form').addEventListener('submit', function(event) {
+    event.preventDefault();
     const data = getGymData();
-    const id = document.getElementById('payment-id').value;
-    const cedula = document.getElementById('payment-client').value;
+    
+    // Validar campos obligatorios y tipos de datos
+    const clientId = document.getElementById('payment-client').value;
     const membershipId = parseInt(document.getElementById('payment-membership').value);
     const amount = parseFloat(document.getElementById('payment-amount').value);
     const discount = parseFloat(document.getElementById('payment-discount').value) || 0;
@@ -1783,40 +1770,64 @@ document.getElementById('payment-form').addEventListener('submit', function (e) 
     const status = document.getElementById('payment-status').value;
     const date = document.getElementById('payment-date').value;
 
-    if (id) {
-        // 🔄 Editar pago existente
-        const index = data.payments.findIndex(p => p.id === parseInt(id));
-        if (index !== -1) {
-            data.payments[index] = {
-                ...data.payments[index],
-                client_cedula: cedula,
-                membership_id: membershipId,
-                amount,
-                discount,
-                method,
-                status,
-                date
-            };
-        }
-    } else {
-        // ➕ Crear nuevo pago
-        const newPayment = {
-            id: generateId('payments'),
-            client_cedula: cedula,
-            membership_id: membershipId,
-            amount,
-            discount,
-            method,
-            status,
-            date
-        };
-        data.payments.push(newPayment);
+    // Validaciones
+    if (!clientId || !membershipId || !amount || !date || !method || !status) {
+        alert('Por favor complete todos los campos obligatorios');
+        return;
     }
 
+    if (isNaN(amount) || amount <= 0) {
+        alert('El monto debe ser un número positivo');
+        return;
+    }
+
+    if (isNaN(discount) || discount < 0 || discount > 100) {
+        alert('El descuento debe ser un número entre 0 y 100');
+        return;
+    }
+
+    // Validar que exista el cliente y tenga membresía activa
+    const client = getClientByCedula(clientId);
+    if (!client) {
+        alert('El cliente seleccionado no existe');
+        return;
+    }
+
+    // Validar que el monto coincida con el precio de la membresía
+    const membership = getMembershipById(membershipId);
+    if (!membership) {
+        alert('La membresía seleccionada no existe');
+        return;
+    }
+
+    if (amount !== membership.price) {
+        if (!confirm('El monto ingresado no coincide con el precio de la membresía. ¿Desea continuar?')) {
+            return;
+        }
+    }
+
+    // Crear objeto de pago
+    const payment = {
+        id: generateId('payments'),
+        client_cedula: clientId,
+        membership_id: membershipId,
+        amount: amount,
+        discount: discount,
+        method: method,
+        status: status,
+        date: date
+    };
+
+    data.payments.push(payment);
     saveGymData(data);
+
+    // Actualizar UI
     loadPaymentsTable();
+    updateDashboardStats();
+    
+    // Cerrar modal y resetear formulario
     closeModal('payment-modal');
-    this.reset(); // Limpia el formulario
+    this.reset();
 });
 
     // Filter attendance by client
@@ -2130,9 +2141,6 @@ function advancedSearch(criteria) {
             <td>${payment.method}</td>
             <td>
                 <span class="badge badge-success">${payment.status}</span>
-                <button class="btn btn-info btn-sm ms-2" onclick="viewInvoice(${payment.id})">
-                    <i class="bi bi-file-text"></i> Ver Factura
-                </button>
             </td>
         `;
         tableBody.appendChild(row);
@@ -2322,11 +2330,21 @@ function handleError(error, context) {
         tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron registros</td></tr>';
         return;
     }
+
+    // Separar clientes activos e inactivos para mostrar totales
+    const activeMemberships = [];
+    const inactiveMemberships = [];
     
     filteredClients.forEach(client => {
         const membership = getMembershipById(client.membership_id);
         const isActive = isMembershipActive(client.start_date, membership.duration);
         const lastAttendance = getLastAttendance(client.cedula);
+        
+        if (isActive) {
+            activeMemberships.push(client);
+        } else {
+            inactiveMemberships.push(client);
+        }
         
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -2343,16 +2361,12 @@ function handleError(error, context) {
         `;
         tableBody.appendChild(row);
     });
-}
 
-// Función auxiliar para obtener la última asistencia
-function getLastAttendance(cedula) {
-    const data = getGymData();
-    return data.attendance
-        .filter(a => a.client_cedula === cedula && a.status === 'Confirmada')
-        .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+    // Actualizar resumen de membresías
+    document.getElementById('membership-report-active').textContent = activeMemberships.length;
+    document.getElementById('membership-report-inactive').textContent = inactiveMemberships.length;
+    document.getElementById('membership-report-total').textContent = filteredClients.length;
 }
-
 
     // Generate trainer report
     function generateTrainerReport() {
@@ -2384,14 +2398,14 @@ function getLastAttendance(cedula) {
                 new Date(`${b.date} ${b.time}`) - new Date(`${a.date} ${a.time}`)
             )[0] : null;
 
-        // Obtener clientes activos únicos que han tenido sesiones con este entrenador
-        const activeClientSet = new Set();
+        // Obtener clientes activos únicos
+        const activeClientsSet = new Set();
         trainerSessions.forEach(session => {
             const client = getClientByCedula(session.client_cedula);
             if (client) {
                 const membership = getMembershipById(client.membership_id);
                 if (membership && isMembershipActive(client.start_date, membership.duration)) {
-                    activeClientSet.add(client.cedula);
+                    activeClientsSet.add(client.cedula);
                 }
             }
         });
@@ -2404,7 +2418,7 @@ function getLastAttendance(cedula) {
             <td>${trainer.gender === 'M' ? 'Masculino' : 'Femenino'}</td>
             <td>${trainerSessions.length}</td>
             <td>
-                ${activeClientSet.size}
+                ${activeClientsSet.size}
                 <button class="btn btn-info btn-sm ms-2" onclick="viewTrainerClients(${trainer.id})">
                     <i class="bi bi-eye"></i> Ver Clientes
                 </button>
@@ -2415,118 +2429,7 @@ function getLastAttendance(cedula) {
     });
 }
 
-// Reemplazar la función viewTrainerClients()
-function viewTrainerClients(trainerId) {
-    const data = getGymData();
-    const trainer = data.trainers.find(t => t.id === trainerId);
-    
-    if (!trainer) {
-        alert('Entrenador no encontrado');
-        return;
-    }
-
-    // Obtener todas las sesiones confirmadas del entrenador
-    const trainerSessions = data.attendance.filter(a => 
-        a.trainer_id === trainerId && 
-        a.status === 'Confirmada'
-    );
-
-    // Crear un Map para mantener la información más reciente de cada cliente
-    const activeClientsMap = new Map();
-
-    // Procesar todas las sesiones para encontrar clientes activos
-    trainerSessions.forEach(session => {
-        const client = getClientByCedula(session.client_cedula);
-        if (client) {
-            const membership = getMembershipById(client.membership_id);
-            if (membership && isMembershipActive(client.start_date, membership.duration)) {
-                const sessionDate = new Date(`${session.date} ${session.time}`);
-                
-                if (!activeClientsMap.has(client.cedula) || 
-                    sessionDate > new Date(activeClientsMap.get(client.cedula).lastSession)) {
-                    activeClientsMap.set(client.cedula, {
-                        client,
-                        membership,
-                        lastSession: `${session.date} ${session.time}`
-                    });
-                }
-            }
-        }
-    });
-
-    // Convertir el Map a array y ordenar por fecha de última sesión
-    const activeClients = Array.from(activeClientsMap.values())
-        .sort((a, b) => new Date(b.lastSession) - new Date(a.lastSession));
-
-    // Crear contenido del modal
-    let modalContent = `
-        <div class="modal-header">
-            <h3>Clientes Activos de ${trainer.name}</h3>
-            <button class="modal-close" data-close="trainer-clients-modal">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="trainer-info mb-3">
-                <p><strong>Especialidad:</strong> ${trainer.specialty}</p>
-                <p><strong>Total de clientes activos:</strong> ${activeClients.length}</p>
-                <p><strong>Total de sesiones:</strong> ${trainerSessions.length}</p>
-            </div>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Cédula</th>
-                        <th>Nombre</th>
-                        <th>Membresía</th>
-                        <th>Última Sesión</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
-
-    if (activeClients.length === 0) {
-        modalContent += '<tr><td colspan="4" class="text-center">No hay clientes activos actualmente</td></tr>';
-    } else {
-        activeClients.forEach(({client, membership, lastSession}) => {
-            modalContent += `
-                <tr>
-                    <td>${client.cedula}</td>
-                    <td>${client.name}</td>
-                    <td>${membership.name}</td>
-                    <td>${formatDateTime(lastSession)}</td>
-                </tr>
-            `;
-        });
-    }
-
-    modalContent += `
-                </tbody>
-            </table>
-        </div>
-    `;
-
-    // Mostrar el modal
-    const modal = document.createElement('div');
-    modal.id = 'trainer-clients-modal';
-    modal.className = 'modal';
-    modal.innerHTML = `<div class="modal-content">${modalContent}</div>`;
-    
-    // Remover modal existente si hay uno
-    const existingModal = document.getElementById('trainer-clients-modal');
-    if (existingModal) {
-        existingModal.remove();
-    }
-    
-    document.body.appendChild(modal);
-    openModal('trainer-clients-modal');
-}
-
-// Add event listener
-document.addEventListener('DOMContentLoaded', function() {
-    const generateButton = document.getElementById('generate-trainer-report');
-    if (generateButton) {
-        generateButton.addEventListener('click', generateTrainerReport);
-    }
-});
-// Event listeners para los botones de reportes
+    // Event listeners para los botones de reportes
 document.getElementById('generate-income-report').addEventListener('click', generateIncomeReport);
 document.getElementById('generate-attendance-report').addEventListener('click', generateAttendanceReport);
 document.getElementById('generate-membership-report').addEventListener('click', generateMembershipReport);
@@ -2911,6 +2814,13 @@ function viewAttendanceDetails(attendanceId) {
     const isEditing = !!document.getElementById('client-modal-title').textContent.includes('Editar');
     const currentCedula = isEditing ? document.getElementById('client-cedula').dataset.originalCedula : null;
 
+    // Verificar si la cédula ya existe en entrenadores
+    const trainerWithCedula = data.trainers.find(t => t.cedula === cedula);
+    if (trainerWithCedula) {
+        alert('Esta cédula ya está registrada para un entrenador. Por favor, use una cédula diferente.');
+        return;
+    }
+
     // Verificar si ya existe un cliente con la misma cédula (excluyendo el cliente actual si está editando)
     const existingClient = data.clients.find(client => client.cedula === cedula && client.cedula !== currentCedula);
     if (existingClient) {
@@ -2952,7 +2862,7 @@ function viewAttendanceDetails(attendanceId) {
     loadClientsTable();
     loadClientSelect();
     closeModal('client-modal');
-    this.reset(); // Limpia el formulario
+    this.reset();
 });
 
     // Membership form
@@ -3003,11 +2913,33 @@ function viewAttendanceDetails(attendanceId) {
     const cedula = document.getElementById('attendance-client').value;
     const date = document.getElementById('attendance-date').value;
     const time = document.getElementById('attendance-time').value;
-    
-    // Validar que el cliente existe
+    const trainerId = document.getElementById('attendance-trainer').value;
+    const status = document.getElementById('attendance-status').value;
+
+    // Validaciones básicas
+    if (!cedula || !date || !time || !status) {
+        alert('Por favor complete todos los campos obligatorios');
+        return;
+    }
+
+    // Validar que el cliente existe y tiene membresía activa
     const client = getClientByCedula(cedula);
     if (!client) {
         alert('Cliente no encontrado');
+        return;
+    }
+
+    const membership = getMembershipById(client.membership_id);
+    if (!membership || !isMembershipActive(client.start_date, membership.duration)) {
+        if (!confirm('El cliente no tiene una membresía activa. ¿Desea registrar la asistencia de todos modos?')) {
+            return;
+        }
+    }
+
+    // Validar que la fecha no sea futura
+    const attendanceDateTime = new Date(`${date}T${time}`);
+    if (attendanceDateTime > new Date()) {
+        alert('No se pueden registrar asistencias con fecha futura');
         return;
     }
 
@@ -3016,12 +2948,21 @@ function viewAttendanceDetails(attendanceId) {
         a.client_cedula === cedula && 
         a.date === date && 
         a.time === time &&
-        (!attendanceId || a.id !== parseInt(attendanceId)) // Excluir la asistencia actual al editar
+        (!attendanceId || a.id !== parseInt(attendanceId))
     );
 
     if (duplicateAttendance) {
         alert('Ya existe un registro de asistencia para este cliente en la misma fecha y hora');
         return;
+    }
+
+    // Si se seleccionó un entrenador, validar que existe
+    if (trainerId) {
+        const trainer = getTrainerById(parseInt(trainerId));
+        if (!trainer) {
+            alert('El entrenador seleccionado no existe');
+            return;
+        }
     }
     
     // Crear objeto de asistencia
@@ -3030,8 +2971,8 @@ function viewAttendanceDetails(attendanceId) {
         client_cedula: cedula,
         date: date,
         time: time,
-        trainer_id: document.getElementById('attendance-trainer').value || null,
-        status: document.getElementById('attendance-status').value
+        trainer_id: trainerId ? parseInt(trainerId) : null,
+        status: status
     };
     
     if (attendanceId) {
@@ -3061,9 +3002,25 @@ function viewAttendanceDetails(attendanceId) {
     
     const data = getGymData();
     const trainerId = document.getElementById('trainer-id').value;
+    const cedula = document.getElementById('trainer-cedula').value;
+    const originalCedula = document.getElementById('trainer-cedula').dataset.originalCedula;
+    
+    // Verificar si la cédula ya existe en clientes
+    const clientWithCedula = data.clients.find(c => c.cedula === cedula);
+    if (clientWithCedula) {
+        alert('Esta cédula ya está registrada para un cliente. Por favor, use una cédula diferente.');
+        return;
+    }
+    
+    // Verificar si la cédula ya existe en otros entrenadores (excluyendo el actual si está editando)
+    const existingTrainer = data.trainers.find(t => t.cedula === cedula && t.cedula !== originalCedula);
+    if (existingTrainer) {
+        alert('Esta cédula ya está registrada para otro entrenador. Por favor, use una cédula diferente.');
+        return;
+    }
     
     const trainer = {
-        cedula: document.getElementById('trainer-cedula').value,
+        cedula: cedula,
         name: document.getElementById('trainer-name').value,
         specialty: document.getElementById('trainer-specialty').value,
         gender: document.getElementById('trainer-gender').value,
@@ -3090,9 +3047,9 @@ function viewAttendanceDetails(attendanceId) {
     loadTrainerSelect();
     closeModal('trainer-modal');
     this.reset();
-        document.getElementById('trainer-id').value = '';
-        });
-    
+    document.getElementById('trainer-id').value = '';
+});
+
  
         // Payment form
         document.getElementById('payment-form').addEventListener('submit', function(event) {

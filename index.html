@@ -1672,32 +1672,52 @@ function loadPaymentsTable() {
     }
 }
 function deleteAttendance(attendanceId) {
-    if (confirm('¿Estás seguro de que deseas eliminar este registro de asistencia?')) {
-        const data = getGymData();
-        // Asegurarse que attendanceId sea un número
-        const idToDelete = parseInt(attendanceId);
-        
-        // Verificar que el registro existe antes de intentar eliminarlo
-        const attendanceExists = data.attendance.some(a => a.id === idToDelete);
-        
-        if (!attendanceExists) {
-            alert('Registro de asistencia no encontrado');
+    try {
+        // Validar y convertir ID
+        if (!attendanceId && attendanceId !== 0) {
+            console.error('ID de asistencia inválido:', attendanceId);
+            alert('Error: ID de asistencia inválido');
             return;
         }
 
-        // Filtrar solo la asistencia específica por su ID
-        data.attendance = data.attendance.filter(a => a.id !== idToDelete);
+        const numericId = parseInt(attendanceId, 10);
         
-        saveGymData(data);
-        loadAttendanceTable();
-        loadRecentAttendance();
-        updateDashboardStats();
-        
-        // Actualizar también el filtro de asistencias si está activo
-        const clientFilter = document.getElementById('attendance-client-filter').value;
-        if (clientFilter) {
-            filterAttendanceByClient(clientFilter);
+        if (isNaN(numericId)) {
+            console.error('ID de asistencia no es un número válido:', attendanceId);
+            alert('Error: ID de asistencia debe ser un número');
+            return;
         }
+
+        if (confirm('¿Estás seguro de que deseas eliminar este registro de asistencia?')) {
+            const data = getGymData();
+            
+            // Encontrar el registro específico primero
+            const recordToDelete = data.attendance.find(a => a.id === numericId);
+            
+            if (!recordToDelete) {
+                console.error('Registro no encontrado para ID:', numericId);
+                alert('Error: Registro de asistencia no encontrado');
+                return;
+            }
+
+            // Verificar antes del filtrado
+            console.log('Registros antes de eliminar:', data.attendance.length);
+            console.log('Intentando eliminar ID:', numericId);
+
+            // Filtrar usando comparación estricta de números
+            data.attendance = data.attendance.filter(a => a.id !== numericId);
+
+            // Verificar después del filtrado
+            console.log('Registros después de eliminar:', data.attendance.length);
+
+            saveGymData(data);
+            loadAttendanceTable();
+            loadRecentAttendance();
+            updateDashboardStats();
+        }
+    } catch (error) {
+        console.error('Error al eliminar asistencia:', error);
+        alert('Error al intentar eliminar el registro');
     }
 }
 

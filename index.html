@@ -1771,26 +1771,68 @@ function deleteAttendance(attendanceId) {
 
 // For trainer deletion
 function deleteTrainer(trainerId) {
-    if (confirm('¿Estás seguro de que deseas eliminar este entrenador?')) {
+    if (!confirm('¿Estás seguro de que deseas eliminar este entrenador?')) {
+        return;
+    }
+
+    try {
         const data = getGymData();
         
-        // Verificar si el entrenador tiene asistencias asignadas
-        const hasAttendances = data.attendance.some(a => a.trainer_id === Number(trainerId));
-        
-        if (hasAttendances) {
-            alert('No se puede eliminar el entrenador porque tiene registros de asistencia asociados');
+        // Verificar que data.trainers es un array
+        if (!Array.isArray(data.trainers)) {
+            console.error('Error: data.trainers no es un array');
+            NotificationSystem.error('Error al eliminar el entrenador');
             return;
         }
+
+        // Guardar la cantidad de registros antes de eliminar
+        const beforeCount = data.trainers.length;
         
-        // Asegurar comparación numérica
-        data.trainers = data.trainers.filter(t => t.id !== Number(trainerId));
+        // Convertir el ID a número y eliminar el registro
+        const idToDelete = Number(trainerId);
+        console.log('Intentando eliminar entrenador con ID:', idToDelete);
+        
+        // Verificar si el entrenador tiene asistencias asignadas
+        const hasAttendances = data.attendance.some(a => Number(a.trainer_id) === idToDelete);
+        if (hasAttendances) {
+            console.error('El entrenador tiene asistencias asignadas');
+            NotificationSystem.error('No se puede eliminar el entrenador porque tiene registros de asistencia asociados');
+            return;
+        }
+
+        // Crear nuevo array sin el registro a eliminar
+        const newTrainers = data.trainers.filter(trainer => {
+            const currentId = Number(trainer.id);
+            console.log('Comparando con ID:', currentId, 'Son iguales:', currentId === idToDelete);
+            return currentId !== idToDelete;
+        });
+        
+        // Verificar si se eliminó algún registro
+        if (beforeCount === newTrainers.length) {
+            console.error('No se encontró el entrenador con ID:', idToDelete);
+            NotificationSystem.error('No se encontró el entrenador');
+            return;
+        }
+
+        // Actualizar data con el nuevo array
+        data.trainers = newTrainers;
+        
+        // Guardar los cambios
         saveGymData(data);
+        
+        // Actualizar las vistas
         loadTrainersTable();
-        loadTrainerSelect(); // Actualizar los selectores de entrenadores
-        updateDashboardStats(); // Actualizar estadísticas del dashboard
+        loadTrainerSelect();
+        updateDashboardStats();
+        
+        // Notificar éxito
+        NotificationSystem.success('Entrenador eliminado correctamente');
+        
+    } catch (error) {
+        console.error('Error al eliminar el entrenador:', error);
+        NotificationSystem.error('Error al eliminar el entrenador');
     }
 }
-    
     // Guardar o actualizar pago
 document.getElementById('payment-form').addEventListener('submit', function(event) {
     event.preventDefault();

@@ -49,8 +49,8 @@
                 <div class="user-info">
                     <div class="user-avatar">A</div>
                     <div>
-                        <div>Administrador</div>
-                        <small>admin@GymManagement</small>
+                        <div>Jose</div>
+                        <small>jose@GymManagement</small>
                     </div>
                 </div>
             </div>
@@ -173,6 +173,7 @@
                                 <th>Email</th>
                                 <th>Teléfono</th>
                                 <th>Membresía</th>
+                                <th>Género</th>
                                 <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
@@ -1334,6 +1335,7 @@ document.getElementById('payment-client').addEventListener('change', function ()
                     <td>${client.email}</td>
                     <td>${client.phone}</td>
                     <td>${membership.name}</td>
+                    <td>${client.gender === 'M' ? 'Masculino' : 'Femenino'}</td>
                     <td>
                         <span class="badge ${isActive ? 'badge-success' : 'badge-danger'}">
                             ${isActive ? 'Activo' : 'Inactivo'}
@@ -1849,102 +1851,260 @@ function generateUniqueTrainerId(data) {
     } while (true);
 }
     // Guardar o actualizar pago
+// Función para generar ID único para pagos
+function generateUniquePaymentId(data) {
+    let newId;
+    do {
+        // Generar un nuevo ID
+        newId = data.payments.length > 0 
+            ? Math.max(...data.payments.map(p => Number(p.id))) + 1 
+            : 1;
+        
+        // Verificar si el ID ya existe
+        const isDuplicate = data.payments.some(p => Number(p.id) === Number(newId));
+        if (!isDuplicate) {
+            return newId;
+        }
+        // Si hay duplicado, el bucle continuará y generará un nuevo ID
+    } while (true);
+}
+
+// Event listener para el formulario de pagos
+// Event listener para el formulario de pagos
 document.getElementById('payment-form').addEventListener('submit', function(event) {
     event.preventDefault();
-    const data = getGymData();
     
-    // Validar campos obligatorios y tipos de datos
-    const clientId = document.getElementById('payment-client').value;
-    const membershipId = parseInt(document.getElementById('payment-membership').value);
-    const amount = parseFloat(document.getElementById('payment-amount').value);
-    const discount = parseFloat(document.getElementById('payment-discount').value) || 0;
-    const method = document.getElementById('payment-method').value;
-    const status = document.getElementById('payment-status').value;
-    const date = document.getElementById('payment-date').value;
+    try {
+        const data = getGymData();
+        const paymentId = document.getElementById('payment-id').value;
+        const clientId = document.getElementById('payment-client').value;
+        const membershipId = parseInt(document.getElementById('payment-membership').value);
+        const amount = parseFloat(document.getElementById('payment-amount').value);
+        const discount = parseFloat(document.getElementById('payment-discount').value) || 0;
+        const method = document.getElementById('payment-method').value;
+        const status = document.getElementById('payment-status').value;
+        const date = document.getElementById('payment-date').value;
 
-    // Validaciones
-    if (!clientId || !membershipId || !amount || !date || !method || !status) {
-        alert('Por favor complete todos los campos obligatorios');
-        return;
-    }
-
-    if (isNaN(amount) || amount <= 0) {
-        alert('El monto debe ser un número positivo');
-        return;
-    }
-
-    if (isNaN(discount) || discount < 0 || discount > 100) {
-        alert('El descuento debe ser un número entre 0 y 100');
-        return;
-    }
-
-    // Validar que exista el cliente y tenga membresía activa
-    const client = getClientByCedula(clientId);
-    if (!client) {
-        alert('El cliente seleccionado no existe');
-        return;
-    }
-
-    // Validar que el monto coincida con el precio de la membresía
-    const membership = getMembershipById(membershipId);
-    if (!membership) {
-        alert('La membresía seleccionada no existe');
-        return;
-    }
-
-    if (amount !== membership.price) {
-        if (!confirm('El monto ingresado no coincide con el precio de la membresía. ¿Desea continuar?')) {
+        // Validaciones
+        if (!clientId || !membershipId || !amount || !date || !method || !status) {
+            NotificationSystem.error('Por favor complete todos los campos obligatorios');
             return;
         }
+
+        // Validar fecha
+        if (new Date(date) > new Date()) {
+            NotificationSystem.error('La fecha no puede ser futura');
+            return;
+        }
+
+        // Crear objeto de pago
+        const payment = {
+            id: paymentId ? Number(paymentId) : generateUniquePaymentId(data),
+            client_cedula: clientId,
+            membership_id: membershipId,
+            amount: amount,
+            discount: discount,
+            method: method,
+            status: status,
+            date: date
+        };
+
+        if (paymentId) {
+            // Actualizar pago existente
+            const index = data.payments.findIndex(p => Number(p.id) === Number(paymentId));
+            if (index !== -1) {
+                data.payments[index] = payment;
+                NotificationSystem.success('Pago actualizado correctamente');
+            } else {
+                NotificationSystem.error('No se encontró el pago a editar');
+                return;
+            }
+        } else {
+            // Agregar nuevo pago
+            data.payments.push(payment);
+            NotificationSystem.success('Pago registrado correctamente');
+        }
+
+        // Guardar y actualizar
+        saveGymData(data);
+        loadPaymentsTable();
+        updateDashboardStats();
+        
+        // Cerrar modal y resetear formulario
+        closeModal('payment-modal');
+        this.reset();
+        document.getElementById('payment-id').value = '';
+        
+    } catch (error) {
+        console.error('Error al procesar el pago:', error);
+        NotificationSystem.error('Error al procesar el pago');
+    }
+});
+// Function to edit payment
+function editPayment(paymentId) {
+    const data = getGymData();
+    const payment = data.payments.find(p => Number(p.id) === Number(paymentId));
+    
+    if (!payment) {
+        NotificationSystem.error('Pago no encontrado');
+        return;
     }
 
-    // Crear objeto de pago
-    const payment = {
-        id: generateId('payments'),
-        client_cedula: clientId,
-        membership_id: membershipId,
-        amount: amount,
-        discount: discount,
-        method: method,
-        status: status,
-        date: date
-    };
+    try {
+        // Set modal title
+        document.getElementById('payment-modal-title').textContent = 'Editar Pago';
+        
+        // Set hidden ID field
+        document.getElementById('payment-id').value = payment.id;
+        
+        // Fill form with payment data
+        document.getElementById('payment-client').value = payment.client_cedula;
+        document.getElementById('payment-membership').value = payment.membership_id;
+        document.getElementById('payment-amount').value = payment.amount;
+        document.getElementById('payment-discount').value = payment.discount || 0;
+        document.getElementById('payment-method').value = payment.method;
+        document.getElementById('payment-status').value = payment.status;
+        document.getElementById('payment-date').value = payment.date;
 
-    data.payments.push(payment);
-    saveGymData(data);
-
-    // Actualizar UI
-    loadPaymentsTable();
-    updateDashboardStats();
+        // Update client name if available
+        const client = getClientByCedula(payment.client_cedula);
+        if (client) {
+            document.getElementById('payment-client-name').value = client.name;
+        }
+        
+        // Open modal
+        openModal('payment-modal');
+        
+    } catch (error) {
+        console.error('Error al cargar el pago:', error);
+        NotificationSystem.error('Error al cargar los datos del pago');
+    }
+}
+// Event listener para el botón de filtrar pagos
+document.getElementById('filter-payments-btn').addEventListener('click', function() {
+    const dateFrom = document.getElementById('payment-date-from').value;
+    const dateTo = document.getElementById('payment-date-to').value;
+    const status = document.getElementById('payment-status-filter').value;
     
-    // Cerrar modal y resetear formulario
-    closeModal('payment-modal');
-    this.reset();
+    filterPayments(dateFrom, dateTo, status);
 });
 
-    // Filter attendance by client
-// Filter attendance by client
-function filterAttendanceByClient(clientId) {
+function filterPayments(dateFrom, dateTo, status) {
+    const data = getGymData();
+    const tableBody = document.getElementById('payments-table');
+    tableBody.innerHTML = '';
+    
+    let filteredPayments = [...data.payments];
+    
+    // Filtrar por fecha
+    if (dateFrom && dateTo) {
+        filteredPayments = filteredPayments.filter(payment => {
+            const paymentDate = new Date(payment.date);
+            const fromDate = new Date(dateFrom);
+            const toDate = new Date(dateTo);
+            // Ajustar la hora de toDate al final del día
+            toDate.setHours(23, 59, 59);
+            
+            return paymentDate >= fromDate && paymentDate <= toDate;
+        });
+    }
+    
+    // Filtrar por estado
+    if (status) {
+        filteredPayments = filteredPayments.filter(payment => payment.status === status);
+    }
+    
+    // Ordenar por fecha más reciente
+    filteredPayments.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    if (filteredPayments.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="8" class="text-center">No se encontraron pagos con los filtros seleccionados</td></tr>';
+        return;
+    }
+    
+    // Mostrar los pagos filtrados
+    filteredPayments.forEach(payment => {
+        const client = getClientByCedula(payment.client_cedula);
+        const membership = getMembershipById(payment.membership_id);
+        const finalAmount = payment.amount * (1 - (payment.discount || 0) / 100);
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${payment.client_cedula || 'N/A'}</td>
+            <td>${client ? client.name : 'Cliente no encontrado'}</td>
+            <td>${membership ? membership.name : 'Membresía no encontrada'}</td>
+            <td>$${finalAmount.toFixed(2)}</td>
+            <td>${payment.method || 'N/A'}</td>
+            <td>
+                <span class="badge ${
+                    payment.status === 'Pagado' ? 'badge-success' : 
+                    payment.status === 'Pendiente' ? 'badge-warning' : 
+                    'badge-danger'
+                }">
+                    ${payment.status || 'Desconocido'}
+                </span>
+            </td>
+            <td>${formatDate(payment.date)}</td>
+            <td>
+                <button class="btn btn-warning" onclick="editPayment(${payment.id})">Editar</button>
+                <button class="btn btn-danger" onclick="deletePayment(${payment.id})">Eliminar</button>
+                <button class="btn btn-info" onclick="viewInvoice(${payment.id})">
+                    <i class="bi bi-file-text"></i> Ver Factura
+                </button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+ 
+document.getElementById('filter-attendance-btn').addEventListener('click', function() {
+    const dateFrom = document.getElementById('attendance-date-from').value;
+    const dateTo = document.getElementById('attendance-date-to').value;
+    const clientId = document.getElementById('attendance-client-filter').value;
+    
+    filterAttendance(dateFrom, dateTo, clientId);
+});
+
+function filterAttendance(dateFrom, dateTo, clientId) {
     const data = getGymData();
     const tableBody = document.getElementById('attendance-table');
     tableBody.innerHTML = '';
     
-    let filteredAttendance = data.attendance;
+    let filteredAttendance = [...data.attendance];
     
+    // Filtrar por fecha
+    if (dateFrom && dateTo) {
+        filteredAttendance = filteredAttendance.filter(attendance => {
+            const attendanceDate = new Date(attendance.date);
+            const fromDate = new Date(dateFrom);
+            const toDate = new Date(dateTo);
+            // Ajustar la hora de toDate al final del día
+            toDate.setHours(23, 59, 59);
+            
+            return attendanceDate >= fromDate && attendanceDate <= toDate;
+        });
+    }
+    
+    // Filtrar por cliente
     if (clientId) {
-        // Fix: Use clientId parameter instead of undefined cedula variable
-        filteredAttendance = data.attendance.filter(a => 
-            a.client_cedula.toString() === clientId.toString()
+        filteredAttendance = filteredAttendance.filter(attendance => 
+            attendance.client_cedula === clientId
         );
     }
     
-    // Sort by date (newest first)
+    // Ordenar por fecha más reciente
     filteredAttendance.sort((a, b) => {
         const dateA = new Date(`${a.date}T${a.time}`);
         const dateB = new Date(`${b.date}T${b.time}`);
         return dateB - dateA;
     });
     
+    if (filteredAttendance.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron registros con los filtros seleccionados</td></tr>';
+        return;
+    }
+    
+    // Mostrar los resultados filtrados
     filteredAttendance.forEach(attendance => {
         const client = getClientByCedula(attendance.client_cedula);
         const trainer = attendance.trainer_id ? getTrainerById(attendance.trainer_id) : null;
@@ -1952,17 +2112,22 @@ function filterAttendanceByClient(clientId) {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${attendance.client_cedula}</td>
-            <td>${client ? client.name : 'Cliente eliminado'}</td>
+            <td>${client ? client.name : 'Cliente no encontrado'}</td>
             <td>${formatDateTime(attendance.date, attendance.time)}</td>
-            <td>${trainer ? trainer.name : 'Ninguno'}</td>
+            <td>${trainer ? trainer.name : 'Sin entrenador'}</td>
             <td>
-                <span class="badge ${attendance.status === 'Confirmada' ? 'badge-success' : 'badge-danger'}">
+                <span class="badge ${
+                    attendance.status === 'Confirmada' ? 'bg-success' : 'bg-danger'
+                }">
                     ${attendance.status}
                 </span>
             </td>
             <td>
                 <button class="btn btn-warning" onclick="editAttendance(${attendance.id})">Editar</button>
-                <button onclick="deleteAttendance(${Number(attendance.id)})">Eliminar</button>
+                <button class="btn btn-danger" onclick="deleteAttendance(${attendance.id})">Eliminar</button>
+                <button class="btn btn-info" onclick="viewAttendanceDetails(${attendance.id})">
+                    <i class="bi bi-eye"></i> Ver Detalles
+                </button>
             </td>
         `;
         tableBody.appendChild(row);
@@ -2123,6 +2288,8 @@ function advancedSearch(criteria) {
         });
     });
 }
+document.getElementById('generate-income-report').addEventListener('click', generateIncomeReport);
+document.getElementById('generate-attendance-report').addEventListener('click', generateAttendanceReport);
 
     // Generate attendance report
     function generateAttendanceReport() {
@@ -3133,68 +3300,6 @@ function viewAttendanceDetails(attendanceId) {
     
     NotificationSystem.success('Entrenador guardado correctamente');
 });
- 
-        // Payment form
-        document.getElementById('payment-form').addEventListener('submit', function(event) {
-    event.preventDefault();
-    const data = getGymData();
-    loadExpiringMemberships();
-
-    // Validar campos obligatorios
-    const clientId = document.getElementById('payment-client').value;
-    const membershipId = document.getElementById('payment-membership').value;
-    const amount = document.getElementById('payment-amount').value;
-    const date = document.getElementById('payment-date').value;
-
-    if (!clientId || !membershipId || !amount || !date) {
-        alert('Por favor complete todos los campos obligatorios');
-        return;
-    }
-
-    // Validar que exista el cliente
-    const client = getClientByCedula(clientId);
-    if (!client) {
-        alert('El cliente seleccionado no existe');
-        return;
-    }
-
-    // Validar que exista la membresía
-    const membership = getMembershipById(membershipId);
-    if (!membership) {
-        alert('La membresía seleccionada no existe');
-        return;
-    }
-
-    // Crear objeto de pago
-    const payment = {
-        id: generateId('payments'),
-        client_cedula: clientId,
-        membership_id: parseInt(membershipId),
-        amount: parseFloat(amount),
-        discount: parseFloat(document.getElementById('payment-discount').value) || 0,
-        method: document.getElementById('payment-method').value,
-        status: document.getElementById('payment-status').value,
-        date: date
-    };
-
-    // Validar descuento
-    if (payment.discount < 0 || payment.discount > 100) {
-        alert('El descuento debe estar entre 0 y 100%');
-        return;
-    }
-
-    data.payments.push(payment);
-    saveGymData(data);
-
-    // Actualizar UI
-    loadPaymentsTable();
-    updateDashboardStats();
-    
-    // Cerrar modal y resetear formulario
-    closeModal('payment-modal');
-    this.reset();
-});
-    
  
         // Close modal when clicking on X or outside the modal
         document.addEventListener('click', function(event) {

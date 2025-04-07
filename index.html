@@ -172,6 +172,7 @@
                                 <th>Nombre</th>
                                 <th>Email</th>
                                 <th>Teléfono</th>
+                                <th>Género</th>
                                 <th>Membresía</th>
                                 <th>Género</th>
                                 <th>Estado</th>
@@ -3419,8 +3420,12 @@ document.getElementById('add-attendance-btn') && document.getElementById('add-at
 document.getElementById('add-payment-btn') && document.getElementById('add-payment-btn').addEventListener('click', function() {
     document.getElementById('payment-form').reset();
     document.getElementById('payment-modal-title').textContent = 'Registrar Pago';
-    openModal('payment-modal');
     
+    // Establecer fecha actual
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('payment-date').value = today;
+    
+    openModal('payment-modal');
 });
 
 // Funciones para abrir y cerrar modals
@@ -3533,6 +3538,7 @@ function searchClients() {
             <td>${client.name}</td>
             <td>${client.email}</td>
             <td>${client.phone}</td>
+            <td>${client.gender === 'M' ? 'Masculino' : 'Femenino'}</td>
             <td>${membership.name}</td>
             <td>
                 <span class="badge ${isActive ? 'badge-success' : 'badge-danger'}">
@@ -3648,12 +3654,44 @@ document.getElementById('client-phone').addEventListener('input', function () {
 });
 
 function deletePayment(paymentId) {
-    if (confirm('¿Estás seguro de que deseas eliminar este registro de pago?')) {
+    if (!confirm('¿Estás seguro de que deseas eliminar este registro de pago?')) {
+        return;
+    }
+
+    try {
         const data = getGymData();
-        // Asegurar comparación numérica
-        data.payments = data.payments.filter(p => p.id !== Number(paymentId));
+        const numericId = Number(paymentId);
+        
+        console.log('Intentando eliminar pago con ID:', numericId);
+        console.log('Pagos antes de eliminar:', data.payments.length);
+        
+        // Verificar que data.payments es un array
+        if (!Array.isArray(data.payments)) {
+            console.error('Error: data.payments no es un array');
+            return;
+        }
+
+        // Encontrar el índice del pago a eliminar
+        const paymentIndex = data.payments.findIndex(p => Number(p.id) === numericId);
+        
+        if (paymentIndex === -1) {
+            console.error('Pago no encontrado:', numericId);
+            return;
+        }
+
+        // Eliminar solo el pago específico usando splice
+        data.payments.splice(paymentIndex, 1);
+        
+        console.log('Pagos después de eliminar:', data.payments.length);
+
         saveGymData(data);
         loadPaymentsTable();
+        updateDashboardStats();
+        
+        NotificationSystem.success('Pago eliminado correctamente');
+    } catch (error) {
+        console.error('Error al eliminar el pago:', error);
+        NotificationSystem.error('Error al eliminar el pago');
     }
 }
 
@@ -3816,14 +3854,28 @@ document.getElementById('trainer-email').addEventListener('input', function () {
   warning.style.display = length === 75 ? 'inline' : 'none';
 });
 function deletePayment(paymentId) {
-    if (confirm('¿Estás seguro de que deseas eliminar este registro de pago?')) {
-        const data = getGymData();
-        // Convertir a número para comparación correcta
-        data.payments = data.payments.filter(p => p.id !== parseInt(paymentId));
-        saveGymData(data);
-        loadPaymentsTable();
+    if (!confirm('¿Estás seguro de que deseas eliminar este registro de pago?')) {
+        return;
     }
+
+    const data = getGymData();
+    const numericId = Number(paymentId);
+    
+    // Verificar que el pago existe
+    const paymentToDelete = data.payments.find(p => Number(p.id) === numericId);
+    if (!paymentToDelete) {
+        console.error('Pago no encontrado:', numericId);
+        return;
+    }
+
+    // Filtrar los pagos, manteniendo todos excepto el que coincide con el ID
+    data.payments = data.payments.filter(p => Number(p.id) !== numericId);
+    
+    saveGymData(data);
+    loadPaymentsTable();
+    updateDashboardStats();
 };
+
 // Event listener para el teléfono
 document.getElementById('trainer-phone').addEventListener('input', function () {
   this.value = this.value.replace(/[^0-9]/g, ''); // Solo números
@@ -3856,6 +3908,91 @@ document.getElementById('trainer-schedule').addEventListener('input', function (
   warning.style.display = length === 50 ? 'inline' : 'none';
 });
 
+function generatePaymentId(data) {
+    // Encontrar el ID más alto actual
+    const maxId = data.payments.reduce((max, payment) => {
+        const paymentId = Number(payment.id);
+        return paymentId > max ? paymentId : max;
+    }, 0);
+    
+    // Retornar el siguiente ID
+    return maxId + 1;
+}
+
+document.getElementById('payment-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const data = getGymData();
+    
+    // Validar campos obligatorios y tipos de datos
+    const clientId = document.getElementById('payment-client').value;
+    const membershipId = parseInt(document.getElementById('payment-membership').value);
+    const amount = parseFloat(document.getElementById('payment-amount').value);
+    const discount = parseFloat(document.getElementById('payment-discount').value) || 0;
+    const method = document.getElementById('payment-method').value;
+    const status = document.getElementById('payment-status').value;
+    const date = document.getElementById('payment-date').value;
+
+    // Validaciones
+    if (!clientId || !membershipId || !amount || !date || !method || !status) {
+        alert('Por favor complete todos los campos obligatorios');
+        return;
+    }
+
+    if (isNaN(amount) || amount <= 0) {
+        alert('El monto debe ser un número positivo');
+        return;
+    }
+
+    if (isNaN(discount) || discount < 0 || discount > 100) {
+        alert('El descuento debe ser un número entre 0 y 100');
+        return;
+    }
+
+    // Validar que exista el cliente y tenga membresía activa
+    const client = getClientByCedula(clientId);
+    if (!client) {
+        alert('El cliente seleccionado no existe');
+        return;
+    }
+
+    // Validar que el monto coincida con el precio de la membresía
+    const membership = getMembershipById(membershipId);
+    if (!membership) {
+        alert('La membresía seleccionada no existe');
+        return;
+    }
+
+    if (amount !== membership.price) {
+        if (!confirm('El monto ingresado no coincide con el precio de la membresía. ¿Desea continuar?')) {
+            return;
+        }
+    }
+
+    // Crear objeto de pago con ID único
+    const payment = {
+        id: generatePaymentId(data),  // Usar nueva función para generar ID
+        client_cedula: clientId,
+        membership_id: parseInt(membershipId),
+        amount: parseFloat(amount),
+        discount: parseFloat(document.getElementById('payment-discount').value) || 0,
+        method: document.getElementById('payment-method').value,
+        status: document.getElementById('payment-status').value,
+        date: date
+    };
+
+    console.log('Nuevo pago con ID:', payment.id); // Para debug
+
+    data.payments.push(payment);
+    saveGymData(data);
+
+    // Actualizar UI
+    loadPaymentsTable();
+    updateDashboardStats();
+    
+    // Cerrar modal y resetear formulario
+    closeModal('payment-modal');
+    this.reset();
+});
     </script>
 </body>
 </html>

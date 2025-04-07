@@ -172,6 +172,7 @@
                                 <th>Nombre</th>
                                 <th>Email</th>
                                 <th>Teléfono</th>
+                                <th>Género</th>
                                 <th>Membresía</th>
                                 <th>Estado</th>
                                 <th>Acciones</th>
@@ -1318,36 +1319,37 @@ document.getElementById('payment-client').addEventListener('change', function ()
 
         // Load clients table
         function loadClientsTable() {
-            const data = getGymData();
-            const tableBody = document.getElementById('clients-table');
-            tableBody.innerHTML = '';
-            
-            data.clients.forEach(client => {
-                const membership = getMembershipById(client.membership_id);
-                const endDate = calculateEndDate(client.start_date, membership.duration);
-                const isActive = isMembershipActive(client.start_date, membership.duration);
-                
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${client.cedula}</td>
-                    <td>${client.name}</td>
-                    <td>${client.email}</td>
-                    <td>${client.phone}</td>
-                    <td>${membership.name}</td>
-                    <td>
-                        <span class="badge ${isActive ? 'badge-success' : 'badge-danger'}">
-                            ${isActive ? 'Activo' : 'Inactivo'}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-primary" onclick="viewClient('${client.cedula}')">Ver</button>
-                        <button class="btn btn-warning" onclick="editClient('${client.cedula}')">Editar</button>
-                        <button class="btn btn-danger" onclick="deleteClient('${client.cedula}')">Eliminar</button>
-                    </td>
-                `;
-                tableBody.appendChild(row);
-            });
-        }
+    const data = getGymData();
+    const tableBody = document.getElementById('clients-table');
+    tableBody.innerHTML = '';
+    
+    data.clients.forEach(client => {
+        const membership = getMembershipById(client.membership_id);
+        const endDate = calculateEndDate(client.start_date, membership.duration);
+        const isActive = isMembershipActive(client.start_date, membership.duration);
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${client.cedula}</td>
+            <td>${client.name}</td>
+            <td>${client.email}</td>
+            <td>${client.phone}</td>
+            <td>${client.gender === 'M' ? 'Masculino' : 'Femenino'}</td>
+            <td>${membership.name}</td>
+            <td>
+                <span class="badge ${isActive ? 'badge-success' : 'badge-danger'}">
+                    ${isActive ? 'Activo' : 'Inactivo'}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-primary" onclick="viewClient('${client.cedula}')">Ver</button>
+                <button class="btn btn-warning" onclick="editClient('${client.cedula}')">Editar</button>
+                <button class="btn btn-danger" onclick="deleteClient('${client.cedula}')">Eliminar</button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
 
         // Load memberships table
         function loadMembershipsTable() {
@@ -3314,8 +3316,12 @@ document.getElementById('add-attendance-btn') && document.getElementById('add-at
 document.getElementById('add-payment-btn') && document.getElementById('add-payment-btn').addEventListener('click', function() {
     document.getElementById('payment-form').reset();
     document.getElementById('payment-modal-title').textContent = 'Registrar Pago';
-    openModal('payment-modal');
     
+    // Establecer fecha actual
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('payment-date').value = today;
+    
+    openModal('payment-modal');
 });
 
 // Funciones para abrir y cerrar modals
@@ -3428,6 +3434,7 @@ function searchClients() {
             <td>${client.name}</td>
             <td>${client.email}</td>
             <td>${client.phone}</td>
+            <td>${client.gender === 'M' ? 'Masculino' : 'Femenino'}</td>
             <td>${membership.name}</td>
             <td>
                 <span class="badge ${isActive ? 'badge-success' : 'badge-danger'}">

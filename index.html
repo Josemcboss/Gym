@@ -1833,6 +1833,23 @@ function deleteTrainer(trainerId) {
         NotificationSystem.error('Error al eliminar el entrenador');
     }
 }
+// Función para generar un ID único para entrenadores
+function generateUniqueTrainerId(data) {
+    let newId;
+    do {
+        // Generar un nuevo ID
+        newId = data.trainers.length > 0 
+            ? Math.max(...data.trainers.map(t => Number(t.id))) + 1 
+            : 1;
+        
+        // Verificar si el ID ya existe
+        const isDuplicate = data.trainers.some(t => Number(t.id) === Number(newId));
+        if (!isDuplicate) {
+            return newId;
+        }
+        // Si hay duplicado, el bucle continuará y generará un nuevo ID
+    } while (true);
+}
     // Guardar o actualizar pago
 document.getElementById('payment-form').addEventListener('submit', function(event) {
     event.preventDefault();
@@ -3092,26 +3109,46 @@ function viewAttendanceDetails(attendanceId) {
     };
     
     if (trainerId) {
-        // Update existing trainer
-        trainer.id = parseInt(trainerId);
-        const index = data.trainers.findIndex(t => t.id === trainer.id);
+        // Actualizar entrenador existente
+        trainer.id = Number(trainerId);
+        const index = data.trainers.findIndex(t => Number(t.id) === Number(trainer.id));
         if (index !== -1) {
+            // Verificar si el ID está duplicado en otros registros
+            const isDuplicate = data.trainers.some((t, i) => 
+                i !== index && Number(t.id) === Number(trainer.id)
+            );
+            
+            if (isDuplicate) {
+                // Asignar nuevo ID si hay duplicado
+                trainer.id = generateUniqueTrainerId(data);
+                console.log('ID duplicado detectado, asignando nuevo ID:', trainer.id);
+            }
             data.trainers[index] = trainer;
         }
     } else {
-        // Add new trainer
-        trainer.id = generateId('trainers');
+        // Agregar nuevo entrenador con ID único
+        trainer.id = generateUniqueTrainerId(data);
         data.trainers.push(trainer);
     }
     
+    // Verificación final de duplicados
+    const ids = data.trainers.map(t => Number(t.id));
+    const hasDuplicates = new Set(ids).size !== ids.length;
+    
+    if (hasDuplicates) {
+        console.error('Se detectaron IDs duplicados después de la operación');
+        NotificationSystem.error('Error en la asignación de ID');
+        return;
+    }
     saveGymData(data);
     loadTrainersTable();
     loadTrainerSelect();
     closeModal('trainer-modal');
     this.reset();
     document.getElementById('trainer-id').value = '';
+    
+    NotificationSystem.success('Entrenador guardado correctamente');
 });
-
  
         // Payment form
         document.getElementById('payment-form').addEventListener('submit', function(event) {

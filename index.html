@@ -3270,7 +3270,7 @@ function viewAttendanceDetails(attendanceId) {
     NotificationSystem.success('Asistencia registrada correctamente');
 });
     // Trainer form
-    document.getElementById('trainer-form').addEventListener('submit', function(event) {
+document.getElementById('trainer-form').addEventListener('submit', function(event) {
     event.preventDefault();
     
     const data = getGymData();
@@ -3288,14 +3288,14 @@ function viewAttendanceDetails(attendanceId) {
     );
 
     if (existingTrainer) {
-        NotificationSystem.error('Ya existe un entrenador con esta cédula');
+        alert('Ya existe un entrenador con esta cédula. Por favor, use una cédula diferente.');
         return;
     }
 
     // Verificar si la cédula ya existe en clientes
     const clientWithCedula = data.clients.find(c => c.cedula === cedula);
     if (clientWithCedula) {
-        NotificationSystem.error('Esta cédula ya está registrada para un cliente');
+        alert('Esta cédula ya está registrada para un cliente. Por favor, use una cédula diferente.');
         return;
     }
     

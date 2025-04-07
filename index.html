@@ -1968,8 +1968,21 @@ function filterAttendanceByClient(clientId) {
         tableBody.appendChild(row);
     });
 }
-    const NotificationSystem = {
+const NotificationSystem = {
+    container: null,
+
+    init: function() {
+        // Crear el contenedor de notificaciones si no existe
+        if (!this.container) {
+            this.container = document.createElement('div');
+            this.container.className = 'notification-container';
+            document.body.appendChild(this.container);
+        }
+    },
+
     show: function(message, type = 'info') {
+        this.init();
+
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.innerHTML = `
@@ -1979,10 +1992,18 @@ function filterAttendanceByClient(clientId) {
             </div>
         `;
         
-        document.body.appendChild(notification);
+        // Agregar al contenedor
+        this.container.appendChild(notification);
         
+        // Configurar el botón de cerrar
+        const closeBtn = notification.querySelector('.notification-close');
+        closeBtn.addEventListener('click', () => notification.remove());
+        
+        // Auto-eliminar después de 5 segundos
         setTimeout(() => {
-            notification.remove();
+            if (notification.parentElement) {
+                notification.remove();
+            }
         }, 5000);
     },
     
@@ -3059,17 +3080,24 @@ function viewAttendanceDetails(attendanceId) {
     const cedula = document.getElementById('trainer-cedula').value;
     const originalCedula = document.getElementById('trainer-cedula').dataset.originalCedula;
     
+    // Verificar si es una edición o un nuevo registro
+    const isEditing = !!trainerId;
+    
+    // Verificar si la cédula ya existe en otros entrenadores
+    const existingTrainer = data.trainers.find(t => 
+        t.cedula === cedula && 
+        (!isEditing || t.id !== Number(trainerId))
+    );
+
+    if (existingTrainer) {
+        NotificationSystem.error('Ya existe un entrenador con esta cédula');
+        return;
+    }
+
     // Verificar si la cédula ya existe en clientes
     const clientWithCedula = data.clients.find(c => c.cedula === cedula);
     if (clientWithCedula) {
-        alert('Esta cédula ya está registrada para un cliente. Por favor, use una cédula diferente.');
-        return;
-    }
-    
-    // Verificar si la cédula ya existe en otros entrenadores (excluyendo el actual si está editando)
-    const existingTrainer = data.trainers.find(t => t.cedula === cedula && t.cedula !== originalCedula);
-    if (existingTrainer) {
-        alert('Esta cédula ya está registrada para otro entrenador. Por favor, use una cédula diferente.');
+        NotificationSystem.error('Esta cédula ya está registrada para un cliente');
         return;
     }
     
@@ -3083,38 +3111,19 @@ function viewAttendanceDetails(attendanceId) {
         schedule: document.getElementById('trainer-schedule').value
     };
     
-    if (trainerId) {
+    if (isEditing) {
         // Actualizar entrenador existente
         trainer.id = Number(trainerId);
         const index = data.trainers.findIndex(t => Number(t.id) === Number(trainer.id));
         if (index !== -1) {
-            // Verificar si el ID está duplicado en otros registros
-            const isDuplicate = data.trainers.some((t, i) => 
-                i !== index && Number(t.id) === Number(trainer.id)
-            );
-            
-            if (isDuplicate) {
-                // Asignar nuevo ID si hay duplicado
-                trainer.id = generateUniqueTrainerId(data);
-                console.log('ID duplicado detectado, asignando nuevo ID:', trainer.id);
-            }
             data.trainers[index] = trainer;
         }
     } else {
-        // Agregar nuevo entrenador con ID único
+        // Agregar nuevo entrenador
         trainer.id = generateUniqueTrainerId(data);
         data.trainers.push(trainer);
     }
     
-    // Verificación final de duplicados
-    const ids = data.trainers.map(t => Number(t.id));
-    const hasDuplicates = new Set(ids).size !== ids.length;
-    
-    if (hasDuplicates) {
-        console.error('Se detectaron IDs duplicados después de la operación');
-        NotificationSystem.error('Error en la asignación de ID');
-        return;
-    }
     saveGymData(data);
     loadTrainersTable();
     loadTrainerSelect();

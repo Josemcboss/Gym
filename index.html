@@ -172,7 +172,6 @@
                                 <th>Nombre</th>
                                 <th>Email</th>
                                 <th>Teléfono</th>
-                                <th>Género</th>
                                 <th>Membresía</th>
                                 <th>Género</th>
                                 <th>Estado</th>
@@ -731,7 +730,8 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="payment-discount">Descuento (%)</label>
-                    <input type="number" class="form-control" id="payment-discount" min="0" max="100" value="0">
+                    <input type="number" class="form-control" id="payment-discount" min="0" max="100" value="0" maxlength="3" >
+                    <small class="text-muted">Máximo 100%</small>
                 </div>
                 <div class="form-group">
                     <label class="form-label" for="payment-method">Método de Pago</label>
@@ -1244,27 +1244,31 @@ document.getElementById('payment-membership').addEventListener('change', functio
 }
 
         // Mostrar cédula y nombre del cliente seleccionado en el modal de pago
-document.getElementById('payment-client').addEventListener('change', function () {
+        document.getElementById('payment-client').addEventListener('change', function() {
     const cedula = this.value;
     const client = getClientByCedula(cedula);
     
     if (client) {
+        // Actualizar el nombre del cliente
         document.getElementById('payment-client-name').value = client.name;
-        // Si quieres mostrar también la cédula en un campo oculto o de solo lectura:
-        // document.getElementById('payment-client-cedula').value = client.cedula;
+        
+        // Obtener la membresía actual del cliente
+        const membership = getMembershipById(client.membership_id);
+        if (membership) {
+            // Seleccionar la membresía en el select
+            document.getElementById('payment-membership').value = membership.id;
+            
+            // Establecer el monto basado en el precio de la membresía
+            document.getElementById('payment-amount').value = membership.price;
+        } else {
+            document.getElementById('payment-membership').value = '';
+            document.getElementById('payment-amount').value = '';
+        }
     } else {
+        // Limpiar campos si no se encuentra el cliente
         document.getElementById('payment-client-name').value = '';
-        // document.getElementById('payment-client-cedula').value = '';
-    }
-});
-
-        document.getElementById('client-cedula').addEventListener('input', function(e) {
-    // Elimina cualquier carácter que no sea número
-    this.value = this.value.replace(/[^0-9]/g, '');
-    
-    // Limita a 11 caracteres (por si acaso)
-    if (this.value.length > 11) {
-        this.value = this.value.slice(0, 11);
+        document.getElementById('payment-membership').value = '';
+        document.getElementById('payment-amount').value = '';
     }
 });
 
@@ -1888,7 +1892,6 @@ document.getElementById('payment-form').addEventListener('submit', function(even
 
         // Validaciones
         if (!clientId || !membershipId || !amount || !date || !method || !status) {
-            NotificationSystem.error('Por favor complete todos los campos obligatorios');
             return;
         }
 
@@ -1939,6 +1942,34 @@ document.getElementById('payment-form').addEventListener('submit', function(even
     } catch (error) {
         console.error('Error al procesar el pago:', error);
         NotificationSystem.error('Error al procesar el pago');
+    }
+});
+// Agregar validación para el campo de descuento
+document.getElementById('payment-discount').addEventListener('input', function() {
+    // Remover caracteres no numéricos
+    this.value = this.value.replace(/[^0-9]/g, '');
+    
+    // Limitar a 3 caracteres
+    if (this.value.length > 3) {
+        this.value = this.value.slice(0, 3);
+    }
+    
+    // Validar que no sea mayor a 100
+    if (parseInt(this.value) > 100) {
+        this.value = '100';
+    }
+});
+
+// Prevenir entrada de caracteres no numéricos
+document.getElementById('payment-discount').addEventListener('keypress', function(e) {
+    // Permitir solo números
+    if (!/^\d*$/.test(e.key)) {
+        e.preventDefault();
+    }
+    
+    // Prevenir entrada si ya hay 3 caracteres y no es tecla de borrar o similar
+    if (this.value.length >= 3 && e.key !== 'Backspace' && e.key !== 'Delete' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
+        e.preventDefault();
     }
 });
 // Function to edit payment
@@ -3174,7 +3205,6 @@ function viewAttendanceDetails(attendanceId) {
 
     // Validaciones básicas
     if (!cedula || !date || !time || !status) {
-        alert('Por favor complete todos los campos obligatorios');
         return;
     }
 
@@ -3934,7 +3964,6 @@ document.getElementById('payment-form').addEventListener('submit', function(even
 
     // Validaciones
     if (!clientId || !membershipId || !amount || !date || !method || !status) {
-        alert('Por favor complete todos los campos obligatorios');
         return;
     }
 

@@ -521,8 +521,6 @@
                                         <th>Nombre</th>
                                         <th>Especialidad</th>
                                         <th>Género</th>
-                                        <th>Sesiones Totales</th>
-                                        <th>Clientes Activos</th>
                                         <th>Última Sesión</th>
                                     </tr>
                                 </thead>
@@ -2391,7 +2389,8 @@ function handleError(error, context) {
         stack: error.stack
     });
 }
-    function generateMembershipReport() {
+// Función para generar reporte de estado de membresías
+function generateMembershipReport() {
     const status = document.getElementById('membership-report-status').value;
     const type = document.getElementById('membership-report-type').value;
     
@@ -2418,17 +2417,22 @@ function handleError(error, context) {
     
     if (filteredClients.length === 0) {
         tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron registros</td></tr>';
+        updateMembershipSummary([], [], []);
         return;
     }
 
-    // Separar clientes activos e inactivos para mostrar totales
+    // Separar clientes activos e inactivos
     const activeMemberships = [];
     const inactiveMemberships = [];
     
     filteredClients.forEach(client => {
         const membership = getMembershipById(client.membership_id);
         const isActive = isMembershipActive(client.start_date, membership.duration);
-        const lastAttendance = getLastAttendance(client.cedula);
+        
+        // Obtener última asistencia
+        const lastAttendance = data.attendance
+            .filter(a => a.client_cedula === client.cedula)
+            .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
         
         if (isActive) {
             activeMemberships.push(client);
@@ -2452,10 +2456,8 @@ function handleError(error, context) {
         tableBody.appendChild(row);
     });
 
-    // Actualizar resumen de membresías
-    document.getElementById('membership-report-active').textContent = activeMemberships.length;
-    document.getElementById('membership-report-inactive').textContent = inactiveMemberships.length;
-    document.getElementById('membership-report-total').textContent = filteredClients.length;
+    // Actualizar resumen
+    updateMembershipSummary(activeMemberships, inactiveMemberships, filteredClients);
 }
 
     // Generate trainer report
@@ -2471,34 +2473,19 @@ function handleError(error, context) {
     tableBody.innerHTML = '';
 
     if (filteredTrainers.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="7" class="text-center">No se encontraron entrenadores</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No se encontraron entrenadores</td></tr>';
         return;
     }
 
     filteredTrainers.forEach(trainer => {
-        // Obtener todas las sesiones confirmadas del entrenador
+        // Obtener última sesión
         const trainerSessions = data.attendance.filter(a => 
-            a.trainer_id === trainer.id && 
+            Number(a.trainer_id) === Number(trainer.id) && 
             a.status === 'Confirmada'
         );
-
-        // Obtener la última sesión confirmada
+        
         const lastSession = trainerSessions.length > 0 ? 
-            [...trainerSessions].sort((a, b) => 
-                new Date(`${b.date} ${b.time}`) - new Date(`${a.date} ${a.time}`)
-            )[0] : null;
-
-        // Obtener clientes activos únicos
-        const activeClientsSet = new Set();
-        trainerSessions.forEach(session => {
-            const client = getClientByCedula(session.client_cedula);
-            if (client) {
-                const membership = getMembershipById(client.membership_id);
-                if (membership && isMembershipActive(client.start_date, membership.duration)) {
-                    activeClientsSet.add(client.cedula);
-                }
-            }
-        });
+            trainerSessions.sort((a, b) => new Date(b.date) - new Date(a.date))[0] : null;
 
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -2506,13 +2493,6 @@ function handleError(error, context) {
             <td>${trainer.name}</td>
             <td>${trainer.specialty}</td>
             <td>${trainer.gender === 'M' ? 'Masculino' : 'Femenino'}</td>
-            <td>${trainerSessions.length}</td>
-            <td>
-                ${activeClientsSet.size}
-                <button class="btn btn-info btn-sm ms-2" onclick="viewTrainerClients(${trainer.id})">
-                    <i class="bi bi-eye"></i> Ver Clientes
-                </button>
-            </td>
             <td>${lastSession ? formatDateTime(lastSession.date, lastSession.time) : 'Sin sesiones'}</td>
         `;
         tableBody.appendChild(row);
@@ -2520,9 +2500,8 @@ function handleError(error, context) {
 }
 
     // Event listeners para los botones de reportes
-document.getElementById('generate-income-report').addEventListener('click', generateIncomeReport);
-document.getElementById('generate-attendance-report').addEventListener('click', generateAttendanceReport);
-document.getElementById('generate-membership-report').addEventListener('click', generateMembershipReport);
+    document.getElementById('generate-membership-report').addEventListener('click', generateMembershipReport);
+    document.getElementById('generate-trainer-report').addEventListener('click', generateTrainerReport);
 // Obtiene los datos del gimnasio desde localStorage
 function getGymData() {
     return JSON.parse(localStorage.getItem('gymData')) || {
